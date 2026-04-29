@@ -1,17 +1,51 @@
 """
 FastAPI приложение: Учебная платформа по основам тестирования программного обеспечения
+
 Улучшенная версия с модульной архитектурой, SQLAlchemy и безопасной аутентификацией
+
+Версия: 2.1.0
+Описание: Образовательная платформа для изучения основ тестирования ПО с геймификацией
+          и социальными функциями.
+
+API Documentation:
+    - Swagger UI: /api/docs
+    - ReDoc: /api/redoc
+    - OpenAPI: /api/openapi.json
+
+Автор: Самойлов Д.А.
+Организация: Московский областной филиал МФЮА
 """
-from fastapi import FastAPI, Request, Depends
+
+from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import NoResultFound
+import logging
+from typing import Union
+import time
+from dotenv import load_dotenv
+
+# Загрузка переменных окружения
+load_dotenv()
 
 # Импорт роутеров
-from app.routers import auth, categories, topics, quizzes, glossary, feedback, progress, gamification, social
+from app.routers import auth, categories, topics, quizzes, glossary, feedback, progress, gamification, social, health, search
 from app.db.database import engine, Base
 from app.db import models  # Импортируем модели для регистрации в Alembic
 from app.services import seed_initial_data, LeaderboardService
+from app.middleware.rate_limit import configure_rate_limiting, limiter, _rate_limit_exceeded_handler
+from app.utils.cache import cache
+
+# Настройка логгирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -19,24 +53,108 @@ async def lifespan(app: FastAPI):
     """Lifespan handler для инициализации БД при запуске."""
     # Создание таблиц при старте (для совместимости)
     Base.metadata.create_all(bind=engine)
+
     # Заполнение начальными данными
-    seed_initial_data()
+    try:
+        seed_initial_data()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing database: {e}")
+
     yield
+
     # Очистка при завершении (если нужно)
+    logger.info("Application shutdown")
 
 
 app = FastAPI(
     title="TestLearn — Основы тестирования ПО",
-    description="Учебная платформа по основам тестирования программного обеспечения",
-    version="2.0.0",
-    lifespan=lifespan
+    description="""
+## Учебная платформа по основам тестирования программного обеспечения
+
+### Основные возможности:
+- 📚 **Теория**: 16 тем по 5 категориям тестирования
+- 📝 **Викторины**: Интерактивные тесты с автоматической проверкой
+- 📖 **Глоссарий**: 43 термина с поиском и фильтрацией
+- 🏆 **Геймификация**: Уровни, достижения, таблица лидеров
+- 💬 **Социальные функции**: Комментарии, уведомления
+- 📊 **Статистика**: Отслеживание прогресса и экспорт данных
+
+### API Endpoints:
+- `/api/auth/*` — Аутентификация и авторизация
+- `/api/categories/*` — Управление категориями
+- `/api/topics/*` — Управление темами
+- `/api/quizzes/*` — Управление викторинами и вопросами
+- `/api/glossary/*` — Управление глоссарием
+- `/api/feedback/*` — Обратная связь от пользователей
+- `/api/progress/*` — Отслеживание прогресса
+- `/api/leaderboard` — Таблица лидеров
+- `/api/achievements` — Достижения пользователя
+- `/api/search` — Поиск по материалам
+- `/api/health/*` — Health check endpoints
+
+### Геймификация:
+- **Уровни**: От 1 до 50, растут с получением опыта
+- **Опыт (XP)**: Начисляется за чтение тем и прохождение тестов
+- **Достижения**: 10+ достижений за различные активности
+- **Ежедневные вызовы**: Новые задания каждый день
+- **Таблица лидеров**: Соревнуйтесь с другими пользователями
+
+### Rate Limiting:
+- **Общий лимит**: 100 запросов в минуту
+- **API лимит**: 60 запросов в минуту
+- **Аутентификация**: 10 запросов в минуту
+- **Поиск**: 30 запросов в минуту
+- **Обратная связь**: 20 запросов в минуту
+    """,
+    version="2.1.0",
+    contact={
+        "name": "Самойлов Д.А.",
+        "email": "samoilov@example.com",
+        "url": "https://github.com/QuadDarv1ne/TestLearn",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json"
 )
 
 # Статика и шаблоны
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Подключение роутеров
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # В production заменить на конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Настройка rate limiting
+configure_rate_limiting(app)
+
+# Добавляем limiter к зависимостям по умолчанию
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# Подключение роутеров с rate limiting
+@app.get("/api/test", tags=["System"])
+@limiter.limit("10/minute")
+async def test_rate_limit(request: Request):
+    """Тестовый endpoint с rate limiting."""
+    return {"message": "Rate limiting is working"}
+
+
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(categories.router, prefix="/api/categories", tags=["Categories"])
 app.include_router(topics.router, prefix="/api/topics", tags=["Topics"])
@@ -46,6 +164,38 @@ app.include_router(feedback.router, prefix="/api/feedback", tags=["Feedback"])
 app.include_router(progress.router, prefix="/api/progress", tags=["Progress"])
 app.include_router(gamification.router, prefix="/api", tags=["Gamification"])
 app.include_router(social.router, prefix="/api/social", tags=["Social"])
+app.include_router(health.router, prefix="/api", tags=["System"])
+app.include_router(search.router, prefix="/api", tags=["Search"])
+
+# Обработчики глобальных ошибок
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Обработчик HTTP исключений."""
+    logger.warning(f"HTTP exception: {exc.status_code} - {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "status": exc.status_code}
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    """Обработчик ошибок SQLAlchemy."""
+    logger.error(f"Database error: {str(exc)}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Database error occurred", "status": 500}
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Обработчик всех остальных исключений."""
+    logger.error(f"Unexpected error: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "status": 500}
+    )
 
 
 # Frontend pages
@@ -108,6 +258,7 @@ async def quiz_page(request: Request):
     try:
         # Get the first quiz available (or create a default one if none)
         quiz = db.query(Quiz).first()
+
         if not quiz:
             # If no quiz exists, we'll create a placeholder for demonstration
             # In a real app, you might redirect to a create quiz page or show a message
@@ -116,6 +267,7 @@ async def quiz_page(request: Request):
         else:
             # Get questions for this quiz
             questions = db.query(Question).filter(Question.quiz_id == quiz.id).order_by(Question.order_num).all()
+
             # Convert to list of dicts for template
             questions = [{
                 "id": q.id,
@@ -198,6 +350,7 @@ async def stats_page(request: Request):
         # Get or create user progress (using a default session for simplicity)
         session_id = 'default_session'
         progress = db.query(UserProgress).filter(UserProgress.session_id == session_id).first()
+
         if progress is None:
             # Create a temporary progress object with zeros
             class Progress:
@@ -214,6 +367,7 @@ async def stats_page(request: Request):
             .outerjoin(Topic, Category.id == Topic.category_id)\
             .group_by(Category.id)\
             .all()
+
         # Convert to list of objects with name and topic_count attributes
         categories_with_stats = [{'name': cat.Category.name, 'topic_count': cat.topic_count} for cat in categories_with_stats]
 
@@ -246,6 +400,7 @@ async def stats_page(request: Request):
             .order_by((QuizResult.score * 100.0 / QuizResult.total).desc())\
             .limit(5)\
             .all()
+
         top_results = []
         for result, quiz_title in top_results_query:
             percentage = int((result.score / result.total * 100)) if result.total > 0 else 0
@@ -308,6 +463,7 @@ async def database_page(request: Request):
                     'pk': bool(col[5]),
                     'notnull': bool(col[3])
                 })
+
             tables_info.append({
                 'name': table_name,
                 'count': count,
@@ -325,12 +481,18 @@ async def database_page(request: Request):
 @app.get("/leaderboard", include_in_schema=False)
 async def leaderboard_page(request: Request):
     """Таблица лидеров раздел."""
-    # Get leaderboard data from service
-    leaderboard_data = LeaderboardService.get_leaderboard(limit=10)
-    return templates.TemplateResponse("leaderboard.html", {
-        "request": request,
-        "leaderboard": leaderboard_data
-    })
+    from app.db.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        # Get leaderboard data from service
+        leaderboard_data = LeaderboardService.get_leaderboard(limit=10, db=db)
+        return templates.TemplateResponse("leaderboard.html", {
+            "request": request,
+            "leaderboard": leaderboard_data
+        })
+    finally:
+        db.close()
 
 
 @app.get("/about", include_in_schema=False)
@@ -342,7 +504,26 @@ async def about_page(request: Request):
 @app.get("/feedback", include_in_schema=False)
 async def feedback_page(request: Request):
     """Обратная связь раздел."""
-    return templates.TemplateResponse("feedback.html", {"request": request})
+    from sqlalchemy.orm import Session
+    from app.db.database import get_db
+    from app.db.models import Feedback
+    from sqlalchemy import func
+
+    db: Session = next(get_db())
+    try:
+        # Get feedback count and average rating
+        feedback_count = db.query(Feedback).count()
+        avg_rating_result = db.query(func.avg(Feedback.rating)).scalar()
+        avg_rating = round(float(avg_rating_result), 1) if avg_rating_result else 0
+
+        return templates.TemplateResponse("feedback.html", {
+            "request": request,
+            "feedback_count": feedback_count,
+            "total_feedback": feedback_count,
+            "avg_rating": avg_rating
+        })
+    finally:
+        db.close()
 
 
 @app.get("/login", include_in_schema=False)

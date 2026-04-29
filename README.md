@@ -115,14 +115,96 @@ View the complete database schema in the application at `/database` or see `temp
 
 ## API Endpoints
 
-TestLearn provides a RESTful API for programmatic access:
+TestLearn provides a comprehensive RESTful API for programmatic access. API documentation is available at:
+- **Swagger UI**: http://localhost:8000/api/docs
+- **ReDoc**: http://localhost:8000/api/redoc
+- **OpenAPI JSON**: http://localhost:8000/api/openapi.json
 
-| Endpoint | Method | Description | Response |
-|----------|--------|-------------|----------|
-| `/api/stats` | GET | Platform-wide statistics | JSON |
-| `/api/categories` | GET | List of all testing categories | JSON array |
-| `/api/quiz/{id}/questions` | GET | Questions for specific quiz (without answers) | JSON array |
-| `/api/feedback` | GET | Recent user feedback submissions | JSON array |
+### Authentication & Authorization
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/login` | POST | User login with username/password |
+| `/api/auth/register` | POST | Register new user |
+| `/api/auth/logout` | POST | User logout |
+| `/api/auth/me` | GET | Get current user info |
+
+### Categories & Topics
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/categories` | GET | List all categories (with pagination) |
+| `/api/categories/{id}` | GET | Get single category details |
+| `/api/topics` | GET | List all topics (filterable by category) |
+| `/api/topics/{id}` | GET | Get single topic with content |
+| `/api/topics/{id}/bookmarks` | POST | Bookmark a topic |
+
+### Quizzes & Questions
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/quizzes` | GET | List all available quizzes |
+| `/api/quizzes/{id}` | GET | Get quiz details |
+| `/api/quizzes/{id}/questions` | GET | Get quiz questions (without answers) |
+| `/api/quizzes/{id}/submit` | POST | Submit quiz answers |
+
+### Glossary
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/glossary` | GET | List all glossary terms (filterable by letter) |
+| `/api/glossary/{id}` | GET | Get single term definition |
+
+### Progress & Statistics
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/stats` | GET | Platform-wide statistics |
+| `/api/progress` | GET | Get user progress |
+| `/api/progress/xp` | POST | Add experience points |
+| `/api/stats/export/pdf` | GET | Export progress as PDF report |
+| `/api/stats/export/csv` | GET | Export quiz results as CSV |
+
+### Gamification
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/leaderboard` | GET | Get top users by experience |
+| `/api/achievements` | GET | Get user achievements |
+| `/api/daily-challenge` | GET | Get daily challenge |
+
+### Social Features
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/comments/{topic_id}` | GET | Get comments for a topic |
+| `/api/comments` | POST | Add a comment |
+| `/api/comments/{id}/like` | POST | Like a comment |
+| `/api/notifications` | GET | Get user notifications |
+| `/api/notifications/{id}/read` | POST | Mark notification as read |
+
+### Feedback
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/feedback` | GET | List recent feedback |
+| `/api/feedback` | POST | Submit feedback |
+
+### Search
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/search` | GET | Full-text search across topics and glossary |
+
+### Health Checks
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Basic health check |
+| `/api/health/detailed` | GET | Detailed health check with DB status |
+| `/api/ready` | GET | Readiness check for Kubernetes |
+| `/api/live` | GET | Liveness check for Kubernetes |
+| `/api/info` | GET | Application version and info |
 
 ## Getting Started
 
@@ -242,3 +324,33 @@ For questions or suggestions, please open an issue in the GitHub repository.
 - [Jinja2](https://palletsprojects.com/p/jinja/) - Python templating engine
 - [Mermaid.js](https://mermaid.js.org/) - Diagram generation for documentation
 - All contributors and testers who helped improve the platform
+
+## Recent Improvements (v2.0.0)
+
+### New Features
+- ✅ **Health Check Endpoints**: `/api/health`, `/api/ready`, `/api/live` for monitoring
+- ✅ **Enhanced Error Handling**: Global exception handlers with proper logging
+- ✅ **Dark/Light Theme**: Toggle between light and dark modes
+- ✅ **Advanced Search**: Real-time search with highlighting and recent searches
+- ✅ **Quiz Timer**: Countdown timer with visual warnings
+- ✅ **Toast Notifications**: User-friendly feedback messages
+- ✅ **API Documentation**: Swagger UI at `/api/docs` and ReDoc at `/api/redoc`
+
+### Docker Improvements
+- ✅ **Multi-stage builds**: Optimized production images
+- ✅ **Health checks**: Container health monitoring
+- ✅ **Development profile**: Hot reload support
+- ✅ **Test profile**: Run tests in isolated container
+
+### Development Tools
+- ✅ **Makefile**: Simplified commands for common tasks
+- ✅ **Environment configuration**: `.env.example` for easy setup
+- ✅ **Comprehensive tests**: 50+ test cases covering all endpoints
+
+### JavaScript Modules
+- ✅ `base.js`: Common utilities (Toast, Loading, Storage, API)
+- ✅ `theme.js`: Theme management and toggle
+- ✅ `search.js`: Advanced search functionality
+- ✅ `quiz.js`: Quiz timer and navigation
+- ✅ `gamification.js`: Levels, achievements, daily challenges
+- ✅ `social.js`: Comments, notifications, leaderboard

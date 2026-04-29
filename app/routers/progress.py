@@ -23,6 +23,56 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 router = APIRouter()
 
+@router.post("/xp")
+def add_experience(amount: int = 10, session_id: str = None, request: Request = None, db: Session = Depends(get_db)):
+    """Add experience points to user progress."""
+    # Get session_id from parameter or request cookie
+    if not session_id and request:
+        session_id = request.cookies.get("session_id")
+    
+    if not session_id:
+        session_id = str(uuid.uuid4())
+    
+    # Get or create user progress
+    progress = db.query(UserProgress).filter(UserProgress.session_id == session_id).first()
+    
+    if not progress:
+        progress = UserProgress(
+            id=str(uuid.uuid4()),
+            session_id=session_id,
+            topics_read=0,
+            quizzes_passed=0,
+            total_score=amount,
+            last_visit=datetime.now(UTC)
+        )
+        db.add(progress)
+    else:
+        progress.total_score += amount
+        progress.last_visit = datetime.now(UTC)
+    
+    db.commit()
+    db.refresh(progress)
+    
+    # Calculate level
+    experience = progress.total_score
+    level = 1
+    xp_required = 100
+    total_xp = experience
+    while total_xp >= xp_required:
+        total_xp -= xp_required
+        level += 1
+        xp_required = int(xp_required * 1.5)
+    
+    return {
+        "status": "success",
+        "session_id": session_id,
+        "total_score": progress.total_score,
+        "level": level,
+        "experience": total_xp,
+        "xp_required_for_next_level": xp_required
+    }
+
+
 
 @router.get("", response_model=UserProgressResponse)
 def get_user_progress(request: Request, db: Session = Depends(get_db)):

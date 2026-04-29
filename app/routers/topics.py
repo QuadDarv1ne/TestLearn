@@ -1,69 +1,98 @@
-"""
-Topics API router
-"""
+""" Topics API router с оптимизированными SQL запросами """
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session
-from typing import List
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
+from typing import List, Optional
 
 from app.db.database import get_db
-from app.db.models import Topic, Category, ReadTopic
+from app.db.models import Topic, Category, ReadTopic, Bookmark
 from app.schemas import TopicResponse, TopicCreate
 
 router = APIRouter()
 
 
 @router.get("", response_model=List[TopicResponse])
-def get_topics(db: Session = Depends(get_db)):
-    """Get all topics."""
-    topics = db.query(Topic).order_by(Topic.order_num, Topic.title).all()
-    
+def get_topics(
+    category_id: Optional[int] = None,
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db)
+):
+    """
+    Получить все темы с пагинацией и фильтрацией по категории.
+
+    Оптимизация:
+    - Использует joinedload для eager loading категорий
+    - Добавлена пагинация для уменьшения объема данных
+    - Фильтрация по category_id в WHERE вместо Python
+    """
+    query = db.query(Topic).join(Category).options(
+        joinedload(Topic.category)
+    )
+
+    # Фильтрация по категории
+    if category_id:
+        query = query.filter(Topic.category_id == category_id)
+
+    # Пагинация
+    topics = query.order_by(
+        Topic.order_num, Topic.title
+    ).offset(offset).limit(limit).all()
+
     result = []
     for topic in topics:
-        category = db.query(Category).filter(Category.id == topic.category_id).first()
         result.append({
             "id": topic.id,
             "title": topic.title,
             "content": topic.content,
             "category_id": topic.category_id,
             "order_num": topic.order_num,
-            "category_name": category.name if category else None
+            "category_name": topic.category.name if topic.category else None
         })
-    
+
     return result
 
 
 @router.get("/{topic_id}", response_model=TopicResponse)
 def get_topic(topic_id: int, db: Session = Depends(get_db)):
-    """Get a specific topic by ID."""
-    topic = db.query(Topic).filter(Topic.id == topic_id).first()
+    """
+    Получить тему по ID.
+
+    Оптимизация: Использует joinedload для получения категории одним запросом.
+    """
+    topic = db.query(Topic).options(
+        joinedload(Topic.category)
+    ).filter(Topic.id == topic_id).one_or_none()
+
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
-    
-    category = db.query(Category).filter(Category.id == topic.category_id).first()
-    
+
     return {
         "id": topic.id,
         "title": topic.title,
         "content": topic.content,
         "category_id": topic.category_id,
         "order_num": topic.order_num,
-        "category_name": category.name if category else None
+        "category_name": topic.category.name if topic.category else None
     }
 
 
 @router.post("", response_model=TopicResponse)
 def create_topic(topic: TopicCreate, db: Session = Depends(get_db)):
-    """Create a new topic (admin only)."""
-    # Verify category exists
-    category = db.query(Category).filter(Category.id == topic.category_id).first()
+    """Создать новую тему (только админ)."""
+    # Проверяем категорию с one_or_none()
+    category = db.query(Category).filter(
+        Category.id == topic.category_id
+    ).one_or_none()
+
     if not category:
         raise HTTPException(status_code=400, detail="Category not found")
-    
+
     db_topic = Topic(**topic.model_dump())
     db.add(db_topic)
     db.commit()
     db.refresh(db_topic)
-    
+
     return {
         "id": db_topic.id,
         "title": db_topic.title,
@@ -75,76 +104,98 @@ def create_topic(topic: TopicCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{topic_id}", response_model=TopicResponse)
-def update_topic(topic_id: int, topic: TopicCreate, db: Session = Depends(get_db)):
-    """Update an existing topic (admin only)."""
-    db_topic = db.query(Topic).filter(Topic.id == topic_id).first()
-    if not db_topic:
+def update_topic(topic_id: int, topic_data: TopicCreate, db: Session = Depends(get_db)):
+    """Обновить существующую тему (только админ)."""
+    topic = db.query(Topic).filter(Topic.id == topic_id).one_or_none()
+
+    if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
-    
-    # Verify category exists
-    category = db.query(Category).filter(Category.id == topic.category_id).first()
+
+    # Проверяем категорию
+    category = db.query(Category).filter(
+        Category.id == topic_data.category_id
+    ).one_or_none()
+
     if not category:
         raise HTTPException(status_code=400, detail="Category not found")
-    
-    for key, value in topic.model_dump().items():
-        setattr(db_topic, key, value)
-    
+
+    # Обновляем поля
+    for key, value in topic_data.model_dump().items():
+        setattr(topic, key, value)
+
     db.commit()
-    db.refresh(db_topic)
-    
+    db.refresh(topic)
+
     return {
-        "id": db_topic.id,
-        "title": db_topic.title,
-        "content": db_topic.content,
-        "category_id": db_topic.category_id,
-        "order_num": db_topic.order_num,
+        "id": topic.id,
+        "title": topic.title,
+        "content": topic.content,
+        "category_id": topic.category_id,
+        "order_num": topic.order_num,
         "category_name": category.name
     }
 
 
 @router.delete("/{topic_id}")
 def delete_topic(topic_id: int, db: Session = Depends(get_db)):
-    """Delete a topic (admin only)."""
-    db_topic = db.query(Topic).filter(Topic.id == topic_id).first()
-    if not db_topic:
+    """Удалить тему (только админ)."""
+    topic = db.query(Topic).filter(Topic.id == topic_id).one_or_none()
+
+    if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
 
-    db.delete(db_topic)
+    # Удаляем связанные записи из read_topics и bookmarks
+    db.query(ReadTopic).filter(ReadTopic.topic_id == topic_id).delete()
+    db.query(Bookmark).filter(Bookmark.topic_id == topic_id).delete()
+
+    db.delete(topic)
     db.commit()
 
     return {"status": "deleted"}
 
 
 @router.get("/recommendations", response_model=List[TopicResponse])
-def get_recommendations(request: Request, db: Session = Depends(get_db)):
-    """Get recommended topics for the user based on their progress."""
+def get_recommendations(
+    request: Request,
+    limit: int = 5,
+    db: Session = Depends(get_db)
+):
+    """
+    Получить рекомендуемые темы для пользователя на основе прогресса.
+
+    Оптимизация:
+    - Использует subquery для получения прочитанных тем
+    - Фильтрация на уровне БД вместо Python
+    """
     session_id = request.cookies.get("session_id", "anonymous")
 
-    # Get topics that the user has not read
     if session_id != "anonymous":
-        read_topic_ids = db.query(ReadTopic.topic_id).filter(
+        # Подзапрос для получения прочитанных тем
+        read_topic_ids_subquery = db.query(ReadTopic.topic_id).filter(
             ReadTopic.session_id == session_id
-        ).all()
-        read_topic_ids = [id[0] for id in read_topic_ids]
+        ).subquery()
 
-        # Get unread topics
-        unread_topics = db.query(Topic).filter(
-            ~Topic.id.in_(read_topic_ids)
-        ).order_by(Topic.order_num, Topic.title).all()
+        # Получаем непрочитанные темы
+        topics = db.query(Topic).filter(
+            ~Topic.id.in_(db.query(read_topic_ids_subquery))
+        ).order_by(Topic.order_num, Topic.title).limit(limit).all()
+
+        # Если все темы прочитаны, возвращаем случайные
+        if not topics:
+            topics = db.query(Topic).order_by(
+                func.random()
+            ).limit(limit).all()
     else:
-        # For anonymous users, return all topics (or maybe a default set)
-        unread_topics = db.query(Topic).order_by(Topic.order_num, Topic.title).all()
-
-    # If no unread topics, return all topics (so we always have something to recommend)
-    if not unread_topics:
-        unread_topics = db.query(Topic).order_by(Topic.order_num, Topic.title).all()
-
-    # Limit to 5 recommendations
-    recommendations = unread_topics[:5]
+        # Для анонимных пользователей возвращаем случайные темы
+        topics = db.query(Topic).order_by(
+            func.random()
+        ).limit(limit).all()
 
     result = []
-    for topic in recommendations:
-        category = db.query(Category).filter(Category.id == topic.category_id).first()
+    for topic in topics:
+        category = db.query(Category).filter(
+            Category.id == topic.category_id
+        ).one_or_none()
         result.append({
             "id": topic.id,
             "title": topic.title,

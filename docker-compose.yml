@@ -1,14 +1,72 @@
 version: '3.8'
 
 services:
+  # Main Application Service
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
     ports:
       - "8000:8000"
     volumes:
-      - ./testlearn.db:/app/testlearn.db
-      - ./static:/app/static
-      - ./templates:/app/templates
+      - ./data/testlearn.db:/app/testlearn.db
+      - ./logs:/app/logs
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=sqlite:///./testlearn.db
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - testlearn-network
+
+  # Development Service (with hot reload)
+  web-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./data/testlearn.db:/app/testlearn.db
+      - ./logs:/app/logs
     environment:
       - DEBUG=True
-    restart: unless-stopped
+      - DATABASE_URL=sqlite:///./testlearn.db
+    profiles:
+      - dev
+    networks:
+      - testlearn-network
+
+  # Test Service (run tests in container)
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    volumes:
+      - ./data/testlearn.db:/app/testlearn.db
+    environment:
+      - DATABASE_URL=sqlite:///./testlearn.db
+    profiles:
+      - test
+    networks:
+      - testlearn-network
+
+# Network configuration
+networks:
+  testlearn-network:
+    driver: bridge
+
+# Volume configuration (optional - for persistent data)
+volumes:
+  testlearn-data:
+    driver: local
