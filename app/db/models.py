@@ -173,3 +173,31 @@ class AdminUser(Base):
     password_hash = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.now(UTC))
     is_active = Column(Boolean, default=True)
+
+
+class AchievementDefinition(Base):
+    """Definition of available achievements in the system."""
+    __tablename__ = "achievement_definitions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    description = Column(Text, nullable=False)
+    icon = Column(String, nullable=False)
+    category = Column(String, default="general")  # general, quiz, topic, streak, social
+    requirement_type = Column(String, nullable=False)  # count, percentage, special
+    requirement_value = Column(Integer, default=0)
+    xp_reward = Column(Integer, default=50)
+    is_active = Column(Boolean, default=True)
+
+
+class UserAchievement(Base):
+    """User's unlocked achievements."""
+    __tablename__ = "user_achievements"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, nullable=False, index=True)
+    achievement_id = Column(Integer, ForeignKey("achievement_definitions.id"), nullable=False)
+    unlocked_at = Column(DateTime, default=datetime.now(UTC))
+    notification_sent = Column(Boolean, default=False)
+
+    achievement = relationship("AchievementDefinition", backref="user_achievements")
