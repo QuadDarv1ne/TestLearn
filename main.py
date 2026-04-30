@@ -251,6 +251,74 @@ async def theory_page(request: Request):
         db.close()
 
 
+@app.get("/topic/{topic_id}", include_in_schema=False)
+async def topic_page(request: Request, topic_id: int):
+    """Страница отдельной темы."""
+    from sqlalchemy.orm import Session
+    from app.db.database import get_db
+    from app.db.models import Topic, Category, ReadTopic, User
+    from datetime import datetime
+
+    db: Session = next(get_db())
+    try:
+        # Get topic with category
+        topic = db.query(Topic).options(
+            joinedload(Topic.category)
+        ).filter(Topic.id == topic_id).one_or_none()
+
+        if not topic:
+            raise HTTPException(status_code=404, detail="Тема не найдена")
+
+        # Get session_id from cookie
+        session_id = request.cookies.get("session_id", "anonymous")
+
+        # Check if user has read this topic
+        is_read = db.query(ReadTopic).filter(
+            ReadTopic.topic_id == topic_id,
+            ReadTopic.session_id == session_id
+        ).first() is not None
+
+        # Mark as read if not already read
+        if not is_read and session_id != "anonymous":
+            read_topic = ReadTopic(
+                topic_id=topic_id,
+                session_id=session_id,
+                read_at=datetime.utcnow()
+            )
+            db.add(read_topic)
+
+            # Update user progress
+            user = db.query(User).filter(User.session_id == session_id).first()
+            if user:
+                user.progress.topics_read += 1
+                # Add XP for reading topic
+                from app.services.gamification_service import GamificationService
+                GamificationService.add_xp(user, 10, db)
+            db.commit()
+
+        # Get next topic for navigation
+        next_topic = db.query(Topic).filter(
+            Topic.order_num > topic.order_num,
+            Topic.category_id == topic.category_id
+        ).order_by(Topic.order_num).first()
+
+        # Get previous topic
+        prev_topic = db.query(Topic).filter(
+            Topic.order_num < topic.order_num,
+            Topic.category_id == topic.category_id
+        ).order_by(Topic.order_num.desc()).first()
+
+        return templates.TemplateResponse(request, "topic.html", {
+            "topic": topic,
+            "category": topic.category,
+            "is_read": is_read,
+            "next_topic": next_topic,
+            "prev_topic": prev_topic
+        })
+    finally:
+        db.close()
+
+
 @app.get("/quiz", include_in_schema=False)
 async def quiz_page(request: Request):
     """Тесты раздел."""
