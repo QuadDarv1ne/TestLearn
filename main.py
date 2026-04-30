@@ -33,7 +33,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Импорт роутеров
-from app.routers import auth, categories, topics, quizzes, glossary, feedback, progress, gamification, social, health, search
+from app.routers import auth, categories, topics, quizzes, glossary, feedback, progress, gamification, social, health, search, pages
 from app.db.database import engine, Base
 from app.db import models  # Импортируем модели для регистрации в Alembic
 from app.services import LeaderboardService
@@ -171,6 +171,7 @@ app.include_router(gamification.router, prefix="/api", tags=["Gamification"])
 app.include_router(social.router, prefix="/api/social", tags=["Social"])
 app.include_router(health.router, prefix="/api", tags=["System"])
 app.include_router(search.router, prefix="/api", tags=["Search"])
+app.include_router(pages.router, tags=["Pages"])
 
 # Обработчики глобальных ошибок
 @app.exception_handler(HTTPException)
