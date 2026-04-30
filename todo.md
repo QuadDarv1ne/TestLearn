@@ -89,14 +89,20 @@
 
 ## 📋 План разработки (dev → main)
 
-
+### Безопасность
 - [ ] CSRF защита для форм
 - [ ] Валидация email в feedback
 - [ ] Rate limiting на sensitive endpoints
+
+### Производительность
 - [ ] Индексы для часто используемых запросов
 - [ ] Пагинация на списках (leaderboard, комментарии)
+
+### Документация
 - [ ] Примеры запросов в README
 - [ ] API changelog
+
+---
 
 ## 📊 Статус проекта
 
@@ -134,26 +140,29 @@ git push origin main
 ### Текущая структура
 ```
 app/
-├── routers/      # API endpoints (модульная структура ✅)
-├── db/           # SQLAlchemy models, database setup
-├── middleware/   # Rate limiting
-├── utils/        # Cache, helpers
-├── config/       # Конфигурация
-├── security.py   # Password hashing, sessions
-├── schemas.py    # Pydantic models
-└── services.py   # ❌ Слишком большой (653 строки)
+├── routers/          # API endpoints (модульная структура ✅)
+├── db/              # SQLAlchemy models, database setup
+├── middleware/      # Rate limiting
+├── utils/           # Cache, helpers
+├── config/          # Конфигурация
+├── security.py      # Password hashing, sessions
+├── schemas.py       # Pydantic models
+└── services/        # Модульные сервисы ✅
+    ├── __init__.py
+    ├── progress_service.py
+    ├── gamification_service.py
+    ├── social_service.py
+    └── search_service.py
 ```
 
 ### Рекомендации
 1. Вынести сервисы в отдельные файлы:
-   - `app/services/progress_service.py`
-   - `app/services/gamification_service.py`
-   - `app/services/social_service.py`
+   - `app/services/progress_service.py` ✅
+   - `app/services/gamification_service.py` ✅
+   - `app/services/social_service.py` ✅
    - `app/services/certificate_service.py`
-
-2. Добавить `app/services/__init__.py` для экспорта
-
-3. Переместить модели в `app/db/models.py` (уже частично сделано)
+2. Добавить `app/services/__init__.py` для экспорта ✅
+3. Переместить модели в `app/db/models.py` (уже частично сделано) ✅
 
 ---
 
@@ -191,5 +200,3 @@ app/
 
 ### 1.0.0 (26.04.2026)
 - Initial release: категории, темы, викторины, глоссарий
-
-
