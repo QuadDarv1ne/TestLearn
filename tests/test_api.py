@@ -2,6 +2,12 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
+from app.db.database import Base, engine
+from app.services.progress_service import seed_initial_data
+
+# Create tables and seed data before any tests
+Base.metadata.create_all(bind=engine)
+seed_initial_data()
 
 
 @pytest.fixture
