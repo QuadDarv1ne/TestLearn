@@ -4,39 +4,30 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py~
+*.py.class
+*.py.backup
+*.swp
+*.swo
 
 # Database
 testlearn.db
 
-# Environment
-.env
-.env.local
-*.env.*
-
 # Dependencies
 .venv/
 venv/
-lib/
-share/
-bin/
+.env
+.env.local
+*.env.*
 
 # Logs
 *.log
 
 # Coverage
 .coverage
+coverage/
 htmlcov/
-.coverage.*
-.nox/
-.tox/
 
 # Pytest
 .pytest_cache/
-pytest.ini.bak
-
-# Miscellaneous
-*.swp
-*~
-.DS_Store
-Thumbs.db
 ```

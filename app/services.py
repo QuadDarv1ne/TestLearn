@@ -4,6 +4,7 @@
 from datetime import datetime, UTC
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.models import (
     Achievement, DailyChallenge, SearchResults, CategoryStats,
@@ -11,7 +12,7 @@ from app.models import (
 )
 from app.db.models import (
     Category, Topic, Quiz, Question, GlossaryTerm,
-    UserProgress, QuizResult, ReadTopic
+    UserProgress, QuizResult, ReadTopic, AchievementDefinition, UserAchievement
 )
 
 
@@ -65,38 +66,100 @@ class ProgressService:
         quizzes_passed = progress.quizzes_passed
         total_score = progress.total_score
 
-        return [
-            Achievement(
-                id=1, name="Первые шаги",
-                description="Прочитать первую тему",
-                icon="📚", unlocked=topics_read >= 1
-            ),
-            Achievement(
-                id=2, name="Любопытный",
-                description="Прочитать 5 тем",
-                icon="🔍", unlocked=topics_read >= 5
-            ),
-            Achievement(
-                id=3, name="Эрудит",
-                description="Прочитать 10 тем",
-                icon="🎓", unlocked=topics_read >= 10
-            ),
-            Achievement(
-                id=4, name="Новичок в тестировании",
-                description="Пройти первый тест",
-                icon="✅", unlocked=quizzes_passed >= 1
-            ),
-            Achievement(
-                id=5, name="Опытный тестировщик",
-                description="Пройти 5 тестов",
-                icon="🏆", unlocked=quizzes_passed >= 5
-            ),
-            Achievement(
-                id=6, name="Мастер тестирования",
-                description="Набрать 100+ баллов в тестах",
-                icon="👑", unlocked=total_score >= 100
-            ),
-        ]
+        # Получаем все доступные достижения из БД
+        achievement_defs = db.query(AchievementDefinition).filter(
+            AchievementDefinition.is_active == True
+        ).all()
+
+        achievements = []
+        for ach_def in achievement_defs:
+            unlocked = False
+            # Проверяем условия разблокировки
+            if ach_def.requirement_type == "count":
+                if ach_def.category == "topic":
+                    unlocked = topics_read >= ach_def.requirement_value
+                elif ach_def.category == "quiz":
+                    unlocked = quizzes_passed >= ach_def.requirement_value
+                elif ach_def.category == "score":
+                    unlocked = total_score >= ach_def.requirement_value
+            
+            # Проверяем, разблокировано ли уже достижение
+            user_achievement = db.query(UserAchievement).filter(
+                UserAchievement.user_id == session_id,
+                UserAchievement.achievement_id == ach_def.id
+            ).first()
+
+            if user_achievement:
+                unlocked = True
+
+            achievements.append(Achievement(
+                id=ach_def.id,
+                name=ach_def.name,
+                description=ach_def.description,
+                icon=ach_def.icon,
+                unlocked=unlocked,
+                unlocked_at=user_achievement.unlocked_at.isoformat() if user_achievement else None
+            ))
+
+        return achievements
+
+    @staticmethod
+    def check_and_unlock_achievements(session_id: str, db: Session) -> List[Achievement]:
+        """Проверить и разблокировать новые достижения."""
+        progress = db.query(UserProgress).filter(
+            UserProgress.session_id == session_id
+        ).first()
+
+        if not progress:
+            return []
+
+        newly_unlocked = []
+        achievement_defs = db.query(AchievementDefinition).filter(
+            AchievementDefinition.is_active == True
+        ).all()
+
+        for ach_def in achievement_defs:
+            # Проверяем, не разблокировано ли уже
+            existing = db.query(UserAchievement).filter(
+                UserAchievement.user_id == session_id,
+                UserAchievement.achievement_id == ach_def.id
+            ).first()
+
+            if existing:
+                continue
+
+            unlocked = False
+            if ach_def.requirement_type == "count":
+                if ach_def.category == "topic":
+                    unlocked = progress.topics_read >= ach_def.requirement_value
+                elif ach_def.category == "quiz":
+                    unlocked = progress.quizzes_passed >= ach_def.requirement_value
+                elif ach_def.category == "score":
+                    unlocked = progress.total_score >= ach_def.requirement_value
+
+            if unlocked:
+                # Создаём запись о разблокировке
+                user_achievement = UserAchievement(
+                    user_id=session_id,
+                    achievement_id=ach_def.id,
+                    unlocked_at=datetime.now(UTC)
+                )
+                db.add(user_achievement)
+                
+                # Начисляем награду в виде опыта
+                progress.total_score += ach_def.xp_reward
+                
+                newly_unlocked.append(Achievement(
+                    id=ach_def.id,
+                    name=ach_def.name,
+                    description=ach_def.description,
+                    icon=ach_def.icon,
+                    unlocked=True,
+                    unlocked_at=user_achievement.unlocked_at.isoformat()
+                ))
+
+        db.commit()
+        return newly_unlocked
 
     @staticmethod
     def get_daily_challenge(db: Session) -> Optional[DailyChallenge]:
@@ -642,6 +705,85 @@ def seed_initial_data():
 
         for term, definition, letter in glossary_data:
             db.add(GlossaryTerm(term=term, definition=definition, letter=letter))
+
+        # --- Достижения (Achievement Definitions) ---
+        achievement_definitions = [
+            AchievementDefinition(
+                name="Первые шаги",
+                description="Прочитать первую тему",
+                icon="📚",
+                category="topic",
+                requirement_type="count",
+                requirement_value=1,
+                xp_reward=20
+            ),
+            AchievementDefinition(
+                name="Любопытный",
+                description="Прочитать 5 тем",
+                icon="🔍",
+                category="topic",
+                requirement_type="count",
+                requirement_value=5,
+                xp_reward=50
+            ),
+            AchievementDefinition(
+                name="Эрудит",
+                description="Прочитать 10 тем",
+                icon="🎓",
+                category="topic",
+                requirement_type="count",
+                requirement_value=10,
+                xp_reward=100
+            ),
+            AchievementDefinition(
+                name="Новичок в тестировании",
+                description="Пройти первый тест",
+                icon="✅",
+                category="quiz",
+                requirement_type="count",
+                requirement_value=1,
+                xp_reward=30
+            ),
+            AchievementDefinition(
+                name="Опытный тестировщик",
+                description="Пройти 5 тестов",
+                icon="🏆",
+                category="quiz",
+                requirement_type="count",
+                requirement_value=5,
+                xp_reward=80
+            ),
+            AchievementDefinition(
+                name="Мастер тестирования",
+                description="Набрать 100+ баллов в тестах",
+                icon="👑",
+                category="score",
+                requirement_type="count",
+                requirement_value=100,
+                xp_reward=150
+            ),
+            AchievementDefinition(
+                name="Знаток теории",
+                description="Прочитать 15 тем",
+                icon="📖",
+                category="topic",
+                requirement_type="count",
+                requirement_value=15,
+                xp_reward=120
+            ),
+            AchievementDefinition(
+                name="Виртуоз",
+                description="Пройти 10 тестов",
+                icon="🌟",
+                category="quiz",
+                requirement_type="count",
+                requirement_value=10,
+                xp_reward=200
+            ),
+        ]
+
+        for ach_def in achievement_definitions:
+            db.add(ach_def)
 
         db.commit()
 

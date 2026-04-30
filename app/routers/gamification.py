@@ -6,8 +6,9 @@ from datetime import datetime, UTC
 from sqlalchemy import func
 
 from app.db.database import get_db
-from app.db.models import UserProgress, QuizResult, Quiz
+from app.db.models import UserProgress, QuizResult, Quiz, AchievementDefinition, UserAchievement
 from app.schemas import LeaderboardEntry
+from app.services import ProgressService
 
 router = APIRouter()
 
@@ -95,59 +96,35 @@ def get_achievements(request: Request, db: Session = Depends(get_db)):
     """Get user achievements based on progress."""
     session_id = request.cookies.get("session_id", "anonymous")
 
-    progress = db.query(UserProgress).filter(
-        UserProgress.session_id == session_id
-    ).first()
-
-    if not progress:
-        return []
-
-    achievements = [
-        {
-            "id": 1,
-            "name": "Первые шаги",
-            "description": "Прочитать первую тему",
-            "icon": "📚",
-            "unlocked": progress.topics_read >= 1
-        },
-        {
-            "id": 2,
-            "name": "Любопытный",
-            "description": "Прочитать 5 тем",
-            "icon": "🔍",
-            "unlocked": progress.topics_read >= 5
-        },
-        {
-            "id": 3,
-            "name": "Эрудит",
-            "description": "Прочитать 10 тем",
-            "icon": "🎓",
-            "unlocked": progress.topics_read >= 10
-        },
-        {
-            "id": 4,
-            "name": "Новичок в тестировании",
-            "description": "Пройти первый тест",
-            "icon": "✅",
-            "unlocked": progress.quizzes_passed >= 1
-        },
-        {
-            "id": 5,
-            "name": "Опытный тестировщик",
-            "description": "Пройти 5 тестов",
-            "icon": "🏆",
-            "unlocked": progress.quizzes_passed >= 5
-        },
-        {
-            "id": 6,
-            "name": "Мастер тестирования",
-            "description": "Набрать 100+ баллов",
-            "icon": "👑",
-            "unlocked": progress.total_score >= 100
-        }
-    ]
-
+    # Используем сервис для получения достижений
+    achievements = ProgressService.get_achievements(session_id, db)
+    
+    # Проверяем и разблокируем новые достижения
+    newly_unlocked = ProgressService.check_and_unlock_achievements(session_id, db)
+    
     return achievements
+
+
+@router.post("/achievements/check")
+def check_achievements(request: Request, db: Session = Depends(get_db)):
+    """Check and unlock new achievements for the user."""
+    session_id = request.cookies.get("session_id", "anonymous")
+    
+    newly_unlocked = ProgressService.check_and_unlock_achievements(session_id, db)
+    
+    return {
+        "newly_unlocked": [
+            {
+                "id": ach.id,
+                "name": ach.name,
+                "description": ach.description,
+                "icon": ach.icon,
+                "unlocked_at": ach.unlocked_at
+            }
+            for ach in newly_unlocked
+        ],
+        "count": len(newly_unlocked)
+    }
 
 
 @router.get("/daily-challenge")
