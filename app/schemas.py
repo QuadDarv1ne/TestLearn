@@ -1,6 +1,4 @@
-"""
-Pydantic schemas for request/response validation
-"""
+"""Pydantic schemas for request/response validation."""
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
@@ -21,7 +19,6 @@ class CategoryCreate(CategoryBase):
 class CategoryResponse(CategoryBase):
     id: int
     topics_count: int = 0
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -40,7 +37,6 @@ class TopicCreate(TopicBase):
 class TopicResponse(TopicBase):
     id: int
     category_name: Optional[str] = None
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -58,7 +54,6 @@ class QuizCreate(QuizBase):
 class QuizResponse(QuizBase):
     id: int
     questions_count: int = 0
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -81,7 +76,6 @@ class QuestionCreate(QuestionBase):
 
 class QuestionResponse(QuestionBase):
     id: int
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -96,7 +90,6 @@ class QuizResultResponse(QuizResultCreate):
     id: str
     created_at: datetime
     percentage: float = 0.0
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -113,7 +106,6 @@ class GlossaryTermCreate(GlossaryTermBase):
 
 class GlossaryTermResponse(GlossaryTermBase):
     id: int
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -128,7 +120,6 @@ class FeedbackCreate(BaseModel):
 class FeedbackResponse(FeedbackCreate):
     id: str
     created_at: datetime
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -145,7 +136,6 @@ class UserProgressResponse(UserProgressBase):
     last_visit: datetime
     level: int = 1
     experience: int = 0
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -169,9 +159,8 @@ class CommentCreate(BaseModel):
 
 class CommentResponse(CommentCreate):
     id: str
-    created_at: datetime
+    created_at: str
     likes: int = 0
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -183,7 +172,6 @@ class AchievementSchema(BaseModel):
     icon: str
     unlocked: bool = False
     unlocked_at: Optional[datetime] = None
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -195,7 +183,6 @@ class DailyChallengeSchema(BaseModel):
     description: str
     bonus_xp: int = 50
     completed: bool = False
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -204,7 +191,6 @@ class LeaderboardEntry(BaseModel):
     session_id: str
     total_score: int
     rank: int
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -214,5 +200,23 @@ class CertificateSchema(BaseModel):
     course_name: str
     completion_date: str
     score: float
+    model_config = ConfigDict(from_attributes=True)
 
+
+# Notification schemas
+class NotificationCreate(BaseModel):
+    user_id: str
+    title: str
+    message: str
+    type: str = "info"
+
+
+class NotificationResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    message: str
+    type: str
+    is_read: bool
+    created_at: str
     model_config = ConfigDict(from_attributes=True)

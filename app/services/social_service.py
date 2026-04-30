@@ -1,25 +1,34 @@
-"""
-Сервис для социальных функций: комментарии и уведомления
-"""
+"""Сервис для социальных функций: комментарии и уведомления."""
 from datetime import datetime, UTC
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
-
-from app.models import Comment, Notification
 
 
 class CommentService:
     """Сервис для управления комментариями к темам."""
 
     @staticmethod
-    def add_comment(topic_id: int, user_id: str, content: str, db: Session) -> Comment:
+    def add_comment(topic_id: int, user_id: str, content: str, db: Session) -> Optional["Comment"]:
         """Добавить комментарий к теме."""
-        from app.db.models import Comment as CommentModel
+        from app.db.models import Comment as CommentModel, Topic
+
+        # Валидация контента
+        if not content or not content.strip():
+            return None
+        if len(content.strip()) < 3:
+            return None
+        if len(content) > 1000:
+            return None
+
+        # Проверка существования темы
+        topic = db.query(Topic).filter(Topic.id == topic_id).first()
+        if not topic:
+            return None
 
         comment = CommentModel(
             topic_id=topic_id,
             user_id=user_id,
-            content=content,
+            content=content.strip(),
             created_at=datetime.now(UTC),
             likes=0
         )
@@ -27,18 +36,18 @@ class CommentService:
         db.commit()
         db.refresh(comment)
 
-        return Comment(
+        from app.schemas import CommentResponse
+        return CommentResponse(
             id=comment.id,
             topic_id=comment.topic_id,
             user_id=comment.user_id,
-            username=f"User_{user_id[:8]}",
             content=comment.content,
             created_at=comment.created_at.isoformat(),
             likes=comment.likes
         )
 
     @staticmethod
-    def get_comments(topic_id: int, db: Session) -> List[Comment]:
+    def get_comments(topic_id: int, db: Session) -> List["Comment"]:
         """Получить комментарии к теме."""
         from app.db.models import Comment as CommentModel
 
@@ -46,12 +55,12 @@ class CommentService:
             CommentModel.topic_id == topic_id
         ).order_by(CommentModel.created_at.desc()).all()
 
+        from app.schemas import CommentResponse
         return [
-            Comment(
+            CommentResponse(
                 id=c.id,
                 topic_id=c.topic_id,
                 user_id=c.user_id,
-                username=f"User_{c.user_id[:8]}",
                 content=c.content,
                 created_at=c.created_at.isoformat(),
                 likes=c.likes
@@ -67,7 +76,6 @@ class CommentService:
         comment = db.query(CommentModel).filter(CommentModel.id == comment_id).first()
         if not comment:
             return False
-
         comment.likes += 1
         db.commit()
         return True
@@ -78,16 +86,25 @@ class NotificationService:
 
     @staticmethod
     def create_notification(
-        user_id: str, title: str, message: str,
-        notification_type: str, db: Session
-    ) -> Notification:
+        user_id: str,
+        title: str,
+        message: str,
+        notification_type: str,
+        db: Session
+    ) -> Optional["Notification"]:
         """Создать уведомление."""
         from app.db.models import Notification as NotificationModel
 
+        # Валидация
+        if not title or not title.strip():
+            return None
+        if not message or not message.strip():
+            return None
+
         notif = NotificationModel(
             user_id=user_id,
-            title=title,
-            message=message,
+            title=title.strip(),
+            message=message.strip(),
             type=notification_type,
             is_read=False,
             created_at=datetime.now(UTC)
@@ -96,7 +113,8 @@ class NotificationService:
         db.commit()
         db.refresh(notif)
 
-        return Notification(
+        from app.schemas import NotificationResponse
+        return NotificationResponse(
             id=notif.id,
             user_id=notif.user_id,
             title=notif.title,
@@ -107,7 +125,7 @@ class NotificationService:
         )
 
     @staticmethod
-    def get_unread_notifications(user_id: str, db: Session) -> List[Notification]:
+    def get_unread_notifications(user_id: str, db: Session) -> List["Notification"]:
         """Получить непрочитанные уведомления."""
         from app.db.models import Notification as NotificationModel
 
@@ -116,8 +134,9 @@ class NotificationService:
             NotificationModel.is_read.is_(False)
         ).order_by(NotificationModel.created_at.desc()).all()
 
+        from app.schemas import NotificationResponse
         return [
-            Notification(
+            NotificationResponse(
                 id=n.id,
                 user_id=n.user_id,
                 title=n.title,
@@ -137,10 +156,8 @@ class NotificationService:
         notif = db.query(NotificationModel).filter(
             NotificationModel.id == notification_id
         ).first()
-
         if not notif:
             return False
-
         notif.is_read = True
         db.commit()
         return True
