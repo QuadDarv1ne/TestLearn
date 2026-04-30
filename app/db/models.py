@@ -1,16 +1,13 @@
-"""
-SQLAlchemy models for TestLearn application
-"""
+""" SQLAlchemy models for TestLearn application """
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 import uuid
-from app.db.database import Base
 
+from app.db.database import Base
 
 def generate_uuid():
     return str(uuid.uuid4())
-
 
 # Question types enumeration as constants
 QUESTION_TYPE_SINGLE_CHOICE = "single_choice"  # One correct answer (A/B/C/D)
@@ -24,26 +21,22 @@ QUESTION_TYPE_FILL_BLANK = "fill_blank"  # Fill in the blank
 
 class Category(Base):
     __tablename__ = "categories"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
     slug = Column(String, unique=True, nullable=False)
     description = Column(Text, default="")
     icon = Column(String, default="check-circle")
-
     topics = relationship("Topic", back_populates="category", cascade="all, delete-orphan")
     quizzes = relationship("Quiz", back_populates="category", cascade="all, delete-orphan")
 
 
 class Topic(Base):
     __tablename__ = "topics"
-
     id = Column(Integer, primary_key=True, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     order_num = Column(Integer, default=0)
-
     category = relationship("Category", back_populates="topics")
     comments = relationship("Comment", back_populates="topic", cascade="all, delete-orphan")
     bookmarks = relationship("Bookmark", back_populates="topic", cascade="all, delete-orphan")
@@ -51,12 +44,10 @@ class Topic(Base):
 
 class Quiz(Base):
     __tablename__ = "quizzes"
-
     id = Column(Integer, primary_key=True, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     title = Column(String, nullable=False)
     description = Column(String, default="")
-
     category = relationship("Category", back_populates="quizzes")
     questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan")
     results = relationship("QuizResult", back_populates="quiz", cascade="all, delete-orphan")
@@ -64,7 +55,6 @@ class Quiz(Base):
 
 class Question(Base):
     __tablename__ = "questions"
-
     id = Column(Integer, primary_key=True, index=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
     question_text = Column(Text, nullable=False)
@@ -81,8 +71,8 @@ class Question(Base):
     is_true = Column(Boolean, nullable=True)  # True for "True", False for "False"
     
     # For short_answer and fill_blank questions
-    correct_answer = Column(String, nullable=True)  # Expected text answer
-    case_sensitive = Column(Boolean, default=False)
+    correct_answer = Column(String, nullable=True)  # Expected text
+    answer_case_sensitive = Column(Boolean, default=False)
     
     # For matching questions (stored as JSON: {"A": "option1", "B": "option2", ...})
     matching_pairs = Column(JSON, nullable=True)  # {"left": ["A", "B"], "right": ["1", "2"]}
@@ -98,13 +88,12 @@ class Question(Base):
     explanation = Column(String, default="")
     order_num = Column(Integer, default=0)
     points = Column(Integer, default=1)  # Points for this question
-
+    
     quiz = relationship("Quiz", back_populates="questions")
 
 
 class QuizResult(Base):
     __tablename__ = "quiz_results"
-
     id = Column(String, primary_key=True, default=generate_uuid)
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
     session_id = Column(String, nullable=True)  # Track user session
@@ -113,13 +102,12 @@ class QuizResult(Base):
     total_points = Column(Integer, default=0)  # Total points earned
     answers = Column(JSON, nullable=True)  # Store user answers: {"question_id": "answer"}
     created_at = Column(DateTime, default=datetime.now(UTC))
-
+    
     quiz = relationship("Quiz", back_populates="results")
 
 
 class GlossaryTerm(Base):
     __tablename__ = "glossary"
-
     id = Column(Integer, primary_key=True, index=True)
     term = Column(String, unique=True, nullable=False)
     definition = Column(Text, nullable=False)
@@ -128,7 +116,6 @@ class GlossaryTerm(Base):
 
 class Feedback(Base):
     __tablename__ = "feedback"
-
     id = Column(String, primary_key=True, default=generate_uuid)
     name = Column(String, nullable=False)
     email = Column(String, default="")
@@ -139,7 +126,6 @@ class Feedback(Base):
 
 class UserProgress(Base):
     __tablename__ = "user_progress"
-
     id = Column(String, primary_key=True, default=generate_uuid)
     session_id = Column(String, unique=True, nullable=False)
     topics_read = Column(Integer, default=0)
@@ -148,9 +134,24 @@ class UserProgress(Base):
     last_visit = Column(DateTime, default=datetime.now(UTC))
 
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True, default=generate_uuid)
+    username = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.now(UTC))
+    last_login = Column(DateTime, nullable=True)
+    session_id = Column(String, ForeignKey("user_progress.session_id"), nullable=True)
+    
+    # Relationships
+    progress = relationship("UserProgress", backref="user", uselist=False)
+    user_achievements = relationship("UserAchievement", backref="user", cascade="all, delete-orphan", primaryjoin="UserAchievement.user_id == User.id")
+
+
 class ReadTopic(Base):
     __tablename__ = "read_topics"
-
     session_id = Column(String, primary_key=True)
     topic_id = Column(Integer, primary_key=True)
     read_at = Column(DateTime, default=datetime.now(UTC))
@@ -158,17 +159,14 @@ class ReadTopic(Base):
 
 class Bookmark(Base):
     __tablename__ = "bookmarks"
-
     session_id = Column(String, primary_key=True)
     topic_id = Column(Integer, ForeignKey("topics.id"), primary_key=True)
     bookmarked_at = Column(DateTime, default=datetime.now(UTC))
-
     topic = relationship("Topic", back_populates="bookmarks")
 
 
 class AdminSession(Base):
     __tablename__ = "admin_sessions"
-
     id = Column(String, primary_key=True)
     username = Column(String, nullable=False)
     expires = Column(DateTime, nullable=False)
@@ -177,20 +175,17 @@ class AdminSession(Base):
 
 class Comment(Base):
     __tablename__ = "comments"
-
     id = Column(String, primary_key=True, default=generate_uuid)
     topic_id = Column(Integer, ForeignKey("topics.id"), nullable=False)
     user_id = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.now(UTC))
     likes = Column(Integer, default=0)
-
     topic = relationship("Topic", back_populates="comments")
 
 
 class Notification(Base):
     __tablename__ = "notifications"
-
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, nullable=False)
     title = Column(String, nullable=False)
@@ -203,7 +198,6 @@ class Notification(Base):
 class AdminUser(Base):
     """Model for admin users with hashed passwords."""
     __tablename__ = "admin_users"
-
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
@@ -214,7 +208,6 @@ class AdminUser(Base):
 class AchievementDefinition(Base):
     """Definition of available achievements in the system."""
     __tablename__ = "achievement_definitions"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
     description = Column(Text, nullable=False)
@@ -229,11 +222,10 @@ class AchievementDefinition(Base):
 class UserAchievement(Base):
     """User's unlocked achievements."""
     __tablename__ = "user_achievements"
-
     id = Column(String, primary_key=True, default=generate_uuid)
-    user_id = Column(String, nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     achievement_id = Column(Integer, ForeignKey("achievement_definitions.id"), nullable=False)
     unlocked_at = Column(DateTime, default=datetime.now(UTC))
     notification_sent = Column(Boolean, default=False)
-
+    
     achievement = relationship("AchievementDefinition", backref="user_achievements")
