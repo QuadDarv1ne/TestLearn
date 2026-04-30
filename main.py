@@ -36,7 +36,11 @@ load_dotenv()
 from app.routers import auth, categories, topics, quizzes, glossary, feedback, progress, gamification, social, health, search
 from app.db.database import engine, Base
 from app.db import models  # Импортируем модели для регистрации в Alembic
-from app.services import seed_initial_data, LeaderboardService
+from app.services import LeaderboardService
+from app.services.progress_service import ProgressService
+from app.services.search_service import SearchService, RecommendationService
+from app.services.gamification_service import CertificateService
+from app.services.social_service import CommentService, NotificationService
 from app.middleware.rate_limit import configure_rate_limiting, limiter, _rate_limit_exceeded_handler
 from app.utils.cache import cache
 
@@ -56,6 +60,7 @@ async def lifespan(app: FastAPI):
 
     # Заполнение начальными данными
     try:
+        from app.services.progress_service import seed_initial_data
         seed_initial_data()
         logger.info("Database initialized successfully")
     except Exception as e:

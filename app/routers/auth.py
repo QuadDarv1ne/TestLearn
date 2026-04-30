@@ -43,15 +43,6 @@ def login(login_data: AdminLogin, db: Session = Depends(get_db)):
     # Create session
     session_id = create_admin_session(admin.username, db)
 
-    response = Response(content={"status": "success"})
-    response.set_cookie(
-        key="admin_session",
-        value=session_id,
-        httponly=True,
-        max_age=86400,  # 24 hours
-        samesite="lax"
-    )
-
     return {"status": "success", "session_id": session_id}
 
 
@@ -62,9 +53,6 @@ def logout(request: Request, db: Session = Depends(get_db)):
 
     if session_id:
         delete_admin_session(session_id, db)
-
-    response = Response(content={"status": "logged out"})
-    response.delete_cookie(key="admin_session")
 
     return {"status": "logged out"}
 
