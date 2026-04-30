@@ -1,7 +1,7 @@
 """
 SQLAlchemy models for TestLearn application
 """
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 import uuid
@@ -10,6 +10,16 @@ from app.db.database import Base
 
 def generate_uuid():
     return str(uuid.uuid4())
+
+
+# Question types enumeration as constants
+QUESTION_TYPE_SINGLE_CHOICE = "single_choice"  # One correct answer (A/B/C/D)
+QUESTION_TYPE_MULTIPLE_CHOICE = "multiple_choice"  # Multiple correct answers
+QUESTION_TYPE_TRUE_FALSE = "true_false"  # True/False
+QUESTION_TYPE_SHORT_ANSWER = "short_answer"  # Text input
+QUESTION_TYPE_MATCHING = "matching"  # Match pairs
+QUESTION_TYPE_ORDERING = "ordering"  # Order items
+QUESTION_TYPE_FILL_BLANK = "fill_blank"  # Fill in the blank
 
 
 class Category(Base):
@@ -58,13 +68,36 @@ class Question(Base):
     id = Column(Integer, primary_key=True, index=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
     question_text = Column(Text, nullable=False)
-    option_a = Column(String, nullable=False)
-    option_b = Column(String, nullable=False)
-    option_c = Column(String, nullable=False)
-    option_d = Column(String, nullable=False)
-    correct_option = Column(String, nullable=False)
+    question_type = Column(String, default=QUESTION_TYPE_SINGLE_CHOICE, nullable=False)
+    
+    # For single_choice and multiple_choice questions
+    option_a = Column(String, nullable=True)
+    option_b = Column(String, nullable=True)
+    option_c = Column(String, nullable=True)
+    option_d = Column(String, nullable=True)
+    correct_option = Column(String, nullable=True)  # e.g., "A", "B", or "A,B,C" for multiple
+    
+    # For true_false questions
+    is_true = Column(Boolean, nullable=True)  # True for "True", False for "False"
+    
+    # For short_answer and fill_blank questions
+    correct_answer = Column(String, nullable=True)  # Expected text answer
+    case_sensitive = Column(Boolean, default=False)
+    
+    # For matching questions (stored as JSON: {"A": "option1", "B": "option2", ...})
+    matching_pairs = Column(JSON, nullable=True)  # {"left": ["A", "B"], "right": ["1", "2"]}
+    correct_matches = Column(JSON, nullable=True)  # {"A": "1", "B": "2"}
+    
+    # For ordering questions (stored as JSON array)
+    ordering_items = Column(JSON, nullable=True)  # ["item1", "item2", "item3"]
+    correct_order = Column(JSON, nullable=True)  # [0, 1, 2] or ["item1", "item2", "item3"]
+    
+    # For fill_blank questions
+    blank_positions = Column(JSON, nullable=True)  # [5, 15] - character positions of blanks
+    
     explanation = Column(String, default="")
     order_num = Column(Integer, default=0)
+    points = Column(Integer, default=1)  # Points for this question
 
     quiz = relationship("Quiz", back_populates="questions")
 
@@ -74,8 +107,11 @@ class QuizResult(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
+    session_id = Column(String, nullable=True)  # Track user session
     score = Column(Integer, nullable=False)
     total = Column(Integer, nullable=False)
+    total_points = Column(Integer, default=0)  # Total points earned
+    answers = Column(JSON, nullable=True)  # Store user answers: {"question_id": "answer"}
     created_at = Column(DateTime, default=datetime.now(UTC))
 
     quiz = relationship("Quiz", back_populates="results")

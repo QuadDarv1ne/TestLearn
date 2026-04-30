@@ -1,7 +1,27 @@
 """Pydantic schemas for request/response validation."""
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+from pydantic import BaseModel, ConfigDict, field_validator
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
+import re
+
+# Question types
+QUESTION_TYPE_SINGLE_CHOICE = "single_choice"
+QUESTION_TYPE_MULTIPLE_CHOICE = "multiple_choice"
+QUESTION_TYPE_TRUE_FALSE = "true_false"
+QUESTION_TYPE_SHORT_ANSWER = "short_answer"
+QUESTION_TYPE_MATCHING = "matching"
+QUESTION_TYPE_ORDERING = "ordering"
+QUESTION_TYPE_FILL_BLANK = "fill_blank"
+
+VALID_QUESTION_TYPES = [
+    QUESTION_TYPE_SINGLE_CHOICE,
+    QUESTION_TYPE_MULTIPLE_CHOICE,
+    QUESTION_TYPE_TRUE_FALSE,
+    QUESTION_TYPE_SHORT_ANSWER,
+    QUESTION_TYPE_MATCHING,
+    QUESTION_TYPE_ORDERING,
+    QUESTION_TYPE_FILL_BLANK,
+]
 
 
 # Category schemas
@@ -60,14 +80,30 @@ class QuizResponse(QuizBase):
 # Question schemas
 class QuestionBase(BaseModel):
     question_text: str
-    option_a: str
-    option_b: str
-    option_c: str
-    option_d: str
-    correct_option: str
-    explanation: str = ""
+    question_type: str = QUESTION_TYPE_SINGLE_CHOICE
     quiz_id: int
     order_num: int = 0
+    points: int = 1
+    # For single_choice and multiple_choice questions
+    option_a: Optional[str] = None
+    option_b: Optional[str] = None
+    option_c: Optional[str] = None
+    option_d: Optional[str] = None
+    correct_option: Optional[str] = None
+    # For true_false questions
+    is_true: Optional[bool] = None
+    # For short_answer and fill_blank questions
+    correct_answer: Optional[str] = None
+    case_sensitive: bool = False
+    # For matching questions
+    matching_pairs: Optional[Dict[str, Any]] = None
+    correct_matches: Optional[Dict[str, str]] = None
+    # For ordering questions
+    ordering_items: Optional[List[str]] = None
+    correct_order: Optional[Union[List[int], List[str]]] = None
+    # For fill_blank questions
+    blank_positions: Optional[List[int]] = None
+    explanation: str = ""
 
 
 class QuestionCreate(QuestionBase):
@@ -79,18 +115,37 @@ class QuestionResponse(QuestionBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+# Quiz Answer submission schema
+class QuizAnswerSubmit(BaseModel):
+    question_id: int
+    answer: Any
+
+
+class QuizSubmit(BaseModel):
+    quiz_id: int
+    answers: List[QuizAnswerSubmit]
+    session_id: Optional[str] = None
+
+
 # Quiz Result schemas
 class QuizResultCreate(BaseModel):
     quiz_id: int
     score: int
     total: int
+    total_points: int = 0
+    answers: Optional[Dict[str, Any]] = None
+    session_id: Optional[str] = None
 
 
 class QuizResultResponse(QuizResultCreate):
     id: str
-    created_at: datetime
+    created_at: str
     percentage: float = 0.0
     model_config = ConfigDict(from_attributes=True)
+
+
+class QuizResultDetail(QuizResultResponse):
+    question_results: List[Dict[str, Any]] = []
 
 
 # Glossary schemas
@@ -116,10 +171,22 @@ class FeedbackCreate(BaseModel):
     message: str
     rating: int = 0
 
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        """Validate email format if provided."""
+        if not v or v.strip() == "":
+            return ""
+        # Simple email regex validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, v):
+            raise ValueError('Invalid email format')
+        return v
+
 
 class FeedbackResponse(FeedbackCreate):
     id: str
-    created_at: datetime
+    created_at: str
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -133,7 +200,7 @@ class UserProgressBase(BaseModel):
 
 class UserProgressResponse(UserProgressBase):
     id: str
-    last_visit: datetime
+    last_visit: str
     level: int = 1
     experience: int = 0
     model_config = ConfigDict(from_attributes=True)

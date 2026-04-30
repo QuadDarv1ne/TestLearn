@@ -5,6 +5,7 @@ from app.services.progress_service import ProgressService
 from app.services.search_service import SearchService, RecommendationService
 from app.services.gamification_service import LeaderboardService, CertificateService
 from app.services.social_service import CommentService, NotificationService
+from app.services.quiz_checker_service import QuizCheckerService
 
 __all__ = [
     "ProgressService",
@@ -14,4 +15,5 @@ __all__ = [
     "CertificateService",
     "CommentService",
     "NotificationService",
+    "QuizCheckerService",
 ]

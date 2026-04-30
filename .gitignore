@@ -9,36 +9,40 @@ env/
 venv/
 .venv/
 .ENV
-.ENV.*
-.venv/
-.venv.*
-.env
-.env.*
-.env.local
 .ENV.local
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.pytest_cache/
-.mypy_cache/
-.hypothesis/
+.env
+.env.local
+.env.*
+.env.local.*
+.venv/
+venv/
+ENV/
+env.bak/
+.venv.bak/
 
 # Database
 *.db
 *.db-journal
 
-# Environment
-.env
-.env.local
-.env.*
+# Logs
+*.log
 
-# Testing
-test*.db
+# Coverage
+.coverage
+coverage/
+htmlcov/
+.coverage.*
+
+# Pytest
+.pytest_cache/
+pytest_debug.log
+
+# MyPy
+.mypy_cache/
+
+# Build directories
+build/
+dist/
+*.egg
+*.egg-info/
 ```
