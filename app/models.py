@@ -1,9 +1,8 @@
 """
 Модели данных для образовательной платформы TestLearn
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime
 
 
 class Category(BaseModel):

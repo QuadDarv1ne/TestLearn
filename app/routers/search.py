@@ -1,7 +1,7 @@
 """ Search API router for TestLearn platform """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 from app.db.database import get_db
 from app.db.models import Topic, Category, GlossaryTerm
@@ -16,7 +16,7 @@ async def search(
 ):
     """
     Search across topics and glossary terms.
-    
+
     Returns matching results from both categories.
     """
     if not q or len(q) < 2:
@@ -26,9 +26,9 @@ async def search(
             "query": q,
             "total_results": 0
         }
-    
+
     search_term = f"%{q}%"
-    
+
     # Search in topics
     topics_query = db.query(Topic, Category.name.label('category_name'))\
         .join(Category, Topic.category_id == Category.id)\
@@ -37,7 +37,7 @@ async def search(
         )\
         .limit(10)\
         .all()
-    
+
     topics = [
         {
             "id": topic.id,
@@ -47,12 +47,12 @@ async def search(
         }
         for topic, category_name in topics_query
     ]
-    
+
     # Search in glossary
     glossary_terms = db.query(GlossaryTerm).filter(
         (GlossaryTerm.term.ilike(search_term)) | (GlossaryTerm.definition.ilike(search_term))
     ).limit(10).all()
-    
+
     glossary_results = [
         {
             "id": term.id,
@@ -61,7 +61,7 @@ async def search(
         }
         for term in glossary_terms
     ]
-    
+
     return {
         "topics": topics,
         "glossary_terms": glossary_results,

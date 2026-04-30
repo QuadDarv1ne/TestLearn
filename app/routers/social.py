@@ -74,7 +74,7 @@ def get_notifications(request: Request, db: Session = Depends(get_db)):
 
     notifications = db.query(Notification).filter(
         Notification.user_id == session_id,
-        Notification.is_read == False
+        Notification.is_read.is_(False)
     ).order_by(Notification.created_at.desc()).limit(20).all()
 
     return notifications

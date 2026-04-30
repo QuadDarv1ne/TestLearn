@@ -2,7 +2,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, UTC
-from typing import Dict, Any
 from app.db.database import get_db
 from app.db.models import Category, Topic, Quiz, Question, GlossaryTerm, Feedback, UserProgress
 

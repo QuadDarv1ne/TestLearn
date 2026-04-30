@@ -233,8 +233,7 @@ async def theory_page(request: Request):
         active_category_id = int(query_params.get("category_id", 0)) if query_params.get("category_id") else None
         search_query = query_params.get("search", "")
 
-        return templates.TemplateResponse("theory.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "theory.html", {
             "categories": categories,
             "topics_by_category": topics_by_category,
             "all_topic_titles": all_topic_titles,
@@ -281,8 +280,7 @@ async def quiz_page(request: Request):
         # Set a default time limit (15 minutes in seconds)
         time_limit = 900
 
-        return templates.TemplateResponse("quiz.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "quiz.html", {
             "quiz": quiz,
             "questions": questions,
             "time_limit": time_limit
@@ -326,8 +324,7 @@ async def glossary_page(request: Request):
         # Get all distinct letters for navigation
         all_letters = [chr(i) for i in range(ord('A'), ord('Z')+1)]
 
-        return templates.TemplateResponse("glossary.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "glossary.html", {
             "terms": terms,
             "all_letters": all_letters,
             "active_letter": active_letter,
@@ -412,8 +409,7 @@ async def stats_page(request: Request):
                 'percentage': percentage
             })
 
-        return templates.TemplateResponse("stats.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "stats.html", {
             "progress": progress,
             "total_topics": total_topics,
             "categories_with_stats": categories_with_stats,
@@ -430,7 +426,7 @@ async def stats_page(request: Request):
 @app.get("/bookmarks", include_in_schema=False)
 async def bookmarks_page(request: Request):
     """Закладки раздел."""
-    return templates.TemplateResponse("bookmarks.html", {"request": request})
+    return templates.TemplateResponse(request, "bookmarks.html", {})
 
 
 @app.get("/database", include_in_schema=False)
@@ -470,8 +466,7 @@ async def database_page(request: Request):
                 'columns': columns
             })
 
-        return templates.TemplateResponse("database.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "database.html", {
             "tables_info": tables_info
         })
     finally:
@@ -487,8 +482,7 @@ async def leaderboard_page(request: Request):
     try:
         # Get leaderboard data from service
         leaderboard_data = LeaderboardService.get_leaderboard(limit=10, db=db)
-        return templates.TemplateResponse("leaderboard.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "leaderboard.html", {
             "leaderboard": leaderboard_data
         })
     finally:
@@ -498,7 +492,7 @@ async def leaderboard_page(request: Request):
 @app.get("/about", include_in_schema=False)
 async def about_page(request: Request):
     """О проекте раздел."""
-    return templates.TemplateResponse("about.html", {"request": request})
+    return templates.TemplateResponse(request, "about.html", {})
 
 
 @app.get("/feedback", include_in_schema=False)
@@ -516,8 +510,7 @@ async def feedback_page(request: Request):
         avg_rating_result = db.query(func.avg(Feedback.rating)).scalar()
         avg_rating = round(float(avg_rating_result), 1) if avg_rating_result else 0
 
-        return templates.TemplateResponse("feedback.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "feedback.html", {
             "feedback_count": feedback_count,
             "total_feedback": feedback_count,
             "avg_rating": avg_rating
@@ -529,7 +522,7 @@ async def feedback_page(request: Request):
 @app.get("/login", include_in_schema=False)
 async def login_page(request: Request):
     """Страница входа."""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html", {})
 
 
 @app.get("/", include_in_schema=False)
@@ -551,4 +544,4 @@ async def home(request: Request):
     finally:
         db.close()
 
-    return templates.TemplateResponse("index.html", {"request": request, "stats": stats})
+    return templates.TemplateResponse(request, "index.html", {"stats": stats})

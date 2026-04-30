@@ -1,6 +1,6 @@
 """ Categories API router с оптимизированными SQL запросами """
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
 

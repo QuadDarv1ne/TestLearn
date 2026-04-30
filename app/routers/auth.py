@@ -3,12 +3,12 @@ Authentication API router
 """
 from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy.orm import Session
-from typing import Optional
 
 from app.db.database import get_db
-from app.db.models import AdminUser, AdminSession
-from app.schemas import AdminLogin, TokenResponse
-from app.security import hash_password, verify_password, create_admin_session, verify_admin_session, delete_admin_session
+from app.db.models import AdminUser
+from app.schemas import AdminLogin
+from app.security import hash_password, verify_password, create_admin_session, \
+    verify_admin_session, delete_admin_session
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ def login(login_data: AdminLogin, db: Session = Depends(get_db)):
     """Authenticate admin user and create session."""
     # For first-time setup, create default admin if no users exist
     admin = db.query(AdminUser).filter(AdminUser.username == login_data.username).first()
-    
+
     if not admin:
         # Check if this is the first admin (no users in database)
         admin_count = db.query(AdminUser).count()
@@ -33,16 +33,16 @@ def login(login_data: AdminLogin, db: Session = Depends(get_db)):
             db.refresh(admin)
         else:
             raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     if not admin.is_active:
         raise HTTPException(status_code=403, detail="Account is disabled")
-    
+
     if not verify_password(login_data.password, admin.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     # Create session
     session_id = create_admin_session(admin.username, db)
-    
+
     response = Response(content={"status": "success"})
     response.set_cookie(
         key="admin_session",
@@ -51,7 +51,7 @@ def login(login_data: AdminLogin, db: Session = Depends(get_db)):
         max_age=86400,  # 24 hours
         samesite="lax"
     )
-    
+
     return {"status": "success", "session_id": session_id}
 
 
@@ -59,13 +59,13 @@ def login(login_data: AdminLogin, db: Session = Depends(get_db)):
 def logout(request: Request, db: Session = Depends(get_db)):
     """Logout admin user by deleting session."""
     session_id = request.cookies.get("admin_session")
-    
+
     if session_id:
         delete_admin_session(session_id, db)
-    
+
     response = Response(content={"status": "logged out"})
     response.delete_cookie(key="admin_session")
-    
+
     return {"status": "logged out"}
 
 
@@ -73,20 +73,20 @@ def logout(request: Request, db: Session = Depends(get_db)):
 def get_current_user(request: Request, db: Session = Depends(get_db)):
     """Get current authenticated admin user."""
     session_id = request.cookies.get("admin_session")
-    
+
     if not session_id:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     username = verify_admin_session(session_id, db)
-    
+
     if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
-    
+
     admin = db.query(AdminUser).filter(AdminUser.username == username).first()
-    
+
     if not admin:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     return {
         "username": admin.username,
         "is_active": admin.is_active,
@@ -103,22 +103,22 @@ def change_password(
 ):
     """Change admin password."""
     session_id = request.cookies.get("admin_session")
-    
+
     if not session_id:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     username = verify_admin_session(session_id, db)
-    
+
     if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
-    
+
     admin = db.query(AdminUser).filter(AdminUser.username == username).first()
-    
+
     if not verify_password(old_password, admin.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    
+
     # Update password
     admin.password_hash = hash_password(new_password)
     db.commit()
-    
+
     return {"status": "Password changed successfully"}
