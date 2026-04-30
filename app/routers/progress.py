@@ -1,27 +1,25 @@
 """
 User Progress API router
 """
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
 from datetime import datetime, UTC
 import uuid
 import io
+from typing import List
 
 from app.db.database import get_db
-from app.db.models import UserProgress, ReadTopic, Bookmark, QuizResult, Topic
+from app.db.models import UserProgress, ReadTopic, Bookmark, QuizResult
 from app.schemas import UserProgressResponse
 
 # PDF generation
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 
 router = APIRouter()
+
 
 @router.post("/xp")
 def add_experience(amount: int = 10, session_id: str = None, request: Request = None, db: Session = Depends(get_db)):
@@ -29,13 +27,13 @@ def add_experience(amount: int = 10, session_id: str = None, request: Request = 
     # Get session_id from parameter or request cookie
     if not session_id and request:
         session_id = request.cookies.get("session_id")
-    
+
     if not session_id:
         session_id = str(uuid.uuid4())
-    
+
     # Get or create user progress
     progress = db.query(UserProgress).filter(UserProgress.session_id == session_id).first()
-    
+
     if not progress:
         progress = UserProgress(
             id=str(uuid.uuid4()),
@@ -49,10 +47,10 @@ def add_experience(amount: int = 10, session_id: str = None, request: Request = 
     else:
         progress.total_score += amount
         progress.last_visit = datetime.now(UTC)
-    
+
     db.commit()
     db.refresh(progress)
-    
+
     # Calculate level
     experience = progress.total_score
     level = 1
@@ -62,7 +60,7 @@ def add_experience(amount: int = 10, session_id: str = None, request: Request = 
         total_xp -= xp_required
         level += 1
         xp_required = int(xp_required * 1.5)
-    
+
     return {
         "status": "success",
         "session_id": session_id,
@@ -71,7 +69,6 @@ def add_experience(amount: int = 10, session_id: str = None, request: Request = 
         "experience": total_xp,
         "xp_required_for_next_level": xp_required
     }
-
 
 
 @router.get("", response_model=UserProgressResponse)
@@ -339,7 +336,7 @@ def get_progress_stats(request: Request, db: Session = Depends(get_db)):
     # Get daily challenge
     from sqlalchemy import func
     quiz = db.query(QuizResult).order_by(func.random()).first()
-    
+
     daily_challenge = None
     if quiz:
         expires = datetime.now(UTC).replace(hour=23, minute=59, second=59)
@@ -512,8 +509,9 @@ def export_progress_pdf(request: Request, db: Session = Depends(get_db)):
 
     # Return PDF as response
     from fastapi.responses import StreamingResponse
+    timestamp = datetime.now(UTC).strftime('%Y%m%d_%H%M%S')
     return StreamingResponse(
         io.BytesIO(buffer.read()),
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=progress_report_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.pdf"}
+        headers={"Content-Disposition": f"attachment; filename=progress_report_{timestamp}.pdf"}
     )

@@ -7,7 +7,7 @@ from typing import List
 
 from app.db.database import get_db
 from app.db.models import Quiz, Question, QuizResult, Category
-from app.schemas import QuizResponse, QuestionCreate, QuizResultCreate, QuizResultResponse
+from app.schemas import QuizResponse, QuestionCreate, QuizResultResponse
 
 router = APIRouter()
 
@@ -16,12 +16,11 @@ router = APIRouter()
 def get_quizzes(db: Session = Depends(get_db)):
     """Get all quizzes with question counts."""
     quizzes = db.query(Quiz).all()
-    
+
     result = []
     for quiz in quizzes:
         questions_count = db.query(Question).filter(Question.quiz_id == quiz.id).count()
-        category = db.query(Category).filter(Category.id == quiz.category_id).first() if quiz.category_id else None
-        
+
         result.append({
             "id": quiz.id,
             "title": quiz.title,
@@ -29,7 +28,7 @@ def get_quizzes(db: Session = Depends(get_db)):
             "category_id": quiz.category_id,
             "questions_count": questions_count
         })
-    
+
     return result
 
 
@@ -39,10 +38,9 @@ def get_quiz(quiz_id: int, db: Session = Depends(get_db)):
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
-    
+
     questions_count = db.query(Question).filter(Question.quiz_id == quiz_id).count()
-    category = db.query(Category).filter(Category.id == quiz.category_id).first() if quiz.category_id else None
-    
+
     return {
         "id": quiz.id,
         "title": quiz.title,
@@ -58,9 +56,9 @@ def get_quiz_questions(quiz_id: int, db: Session = Depends(get_db)):
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
-    
+
     questions = db.query(Question).filter(Question.quiz_id == quiz_id).order_by(Question.order_num).all()
-    
+
     result = []
     for q in questions:
         result.append({
@@ -72,7 +70,7 @@ def get_quiz_questions(quiz_id: int, db: Session = Depends(get_db)):
             "option_d": q.option_d,
             "order_num": q.order_num
         })
-    
+
     return result
 
 
@@ -82,10 +80,10 @@ def submit_quiz_result(quiz_id: int, result_data: dict, db: Session = Depends(ge
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
-    
+
     score = result_data.get("score", 0)
     total = result_data.get("total", 0)
-    
+
     db_result = QuizResult(
         quiz_id=quiz_id,
         score=score,
@@ -94,9 +92,9 @@ def submit_quiz_result(quiz_id: int, result_data: dict, db: Session = Depends(ge
     db.add(db_result)
     db.commit()
     db.refresh(db_result)
-    
+
     percentage = (score / total * 100) if total > 0 else 0
-    
+
     return {
         "id": db_result.id,
         "quiz_id": db_result.quiz_id,
@@ -114,7 +112,7 @@ def create_quiz(title: str, description: str = "", category_id: int = None, db: 
         category = db.query(Category).filter(Category.id == category_id).first()
         if not category:
             raise HTTPException(status_code=400, detail="Category not found")
-    
+
     db_quiz = Quiz(
         title=title,
         description=description,
@@ -123,7 +121,7 @@ def create_quiz(title: str, description: str = "", category_id: int = None, db: 
     db.add(db_quiz)
     db.commit()
     db.refresh(db_quiz)
-    
+
     return {
         "id": db_quiz.id,
         "title": db_quiz.title,
@@ -139,15 +137,15 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
     quiz = db.query(Quiz).filter(Quiz.id == question.quiz_id).first()
     if not quiz:
         raise HTTPException(status_code=400, detail="Quiz not found")
-    
+
     if question.correct_option not in ["A", "B", "C", "D"]:
         raise HTTPException(status_code=400, detail="Correct option must be A, B, C, or D")
-    
+
     db_question = Question(**question.model_dump())
     db.add(db_question)
     db.commit()
     db.refresh(db_question)
-    
+
     return {
         "id": db_question.id,
         "question_text": db_question.question_text,

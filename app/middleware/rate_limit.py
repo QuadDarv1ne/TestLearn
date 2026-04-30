@@ -2,7 +2,6 @@
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 import logging
 
@@ -31,8 +30,6 @@ class RateLimitMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        request = Request(scope, receive=receive)
-
         try:
             return await self.app(scope, receive, send)
         except RateLimitExceeded as exc:
@@ -49,8 +46,6 @@ class RateLimitMiddleware:
 
 def configure_rate_limiting(app):
     """Настройка rate limiting для приложения."""
-    from fastapi import FastAPI
-
     # Добавляем limiter к app
     app.state.limiter = limiter
 

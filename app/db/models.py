@@ -1,7 +1,7 @@
 """
 SQLAlchemy models for TestLearn application
 """
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 import uuid

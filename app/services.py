@@ -1,10 +1,9 @@
 """
 Сервисный слой для бизнес-логики образовательной платформы
 """
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, UTC
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from app.models import (
     Achievement, DailyChallenge, SearchResults, CategoryStats,
@@ -12,7 +11,7 @@ from app.models import (
 )
 from app.db.models import (
     Category, Topic, Quiz, Question, GlossaryTerm,
-    UserProgress, QuizResult, ReadTopic, Bookmark
+    UserProgress, QuizResult, ReadTopic
 )
 
 
@@ -445,7 +444,7 @@ class NotificationService:
 
         notifications = db.query(Notification).filter(
             Notification.user_id == user_id,
-            Notification.is_read == False
+            Notification.is_read.is_(False)
         ).order_by(Notification.created_at.desc()).all()
 
         return [

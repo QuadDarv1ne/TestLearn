@@ -1,13 +1,13 @@
 """ Router for gamification features: leaderboard, certificates, achievements """
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List
 from datetime import datetime, UTC
 from sqlalchemy import func
 
 from app.db.database import get_db
-from app.db.models import UserProgress, QuizResult, Topic, ReadTopic, Category, Quiz
-from app.schemas import LeaderboardEntry, CertificateSchema
+from app.db.models import UserProgress, QuizResult, Quiz
+from app.schemas import LeaderboardEntry
 
 router = APIRouter()
 

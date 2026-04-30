@@ -16,7 +16,7 @@ router = APIRouter()
 def get_glossary(db: Session = Depends(get_db)):
     """Get all glossary terms."""
     terms = db.query(GlossaryTerm).order_by(GlossaryTerm.letter, GlossaryTerm.term).all()
-    
+
     return [
         {
             "id": t.id,
@@ -34,7 +34,7 @@ def get_term(term_id: int, db: Session = Depends(get_db)):
     term = db.query(GlossaryTerm).filter(GlossaryTerm.id == term_id).first()
     if not term:
         raise HTTPException(status_code=404, detail="Term not found")
-    
+
     return {
         "id": term.id,
         "term": term.term,
@@ -50,12 +50,12 @@ def create_term(term: GlossaryTermCreate, db: Session = Depends(get_db)):
     existing = db.query(GlossaryTerm).filter(GlossaryTerm.term == term.term).first()
     if existing:
         raise HTTPException(status_code=400, detail="Term already exists")
-    
+
     db_term = GlossaryTerm(**term.model_dump())
     db.add(db_term)
     db.commit()
     db.refresh(db_term)
-    
+
     return {
         "id": db_term.id,
         "term": db_term.term,
