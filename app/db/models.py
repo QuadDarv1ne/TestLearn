@@ -1,4 +1,4 @@
-""" SQLAlchemy models for TestLearn application """
+﻿""" SQLAlchemy models for TestLearn application """
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
@@ -56,7 +56,7 @@ class Quiz(Base):
 class Question(Base):
     __tablename__ = "questions"
     id = Column(Integer, primary_key=True, index=True)
-    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False, index=True)
     question_text = Column(Text, nullable=False)
     question_type = Column(String, default=QUESTION_TYPE_SINGLE_CHOICE, nullable=False)
     
@@ -95,8 +95,8 @@ class Question(Base):
 class QuizResult(Base):
     __tablename__ = "quiz_results"
     id = Column(String, primary_key=True, default=generate_uuid)
-    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False)
-    session_id = Column(String, nullable=True)  # Track user session
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False, index=True)
+    session_id = Column(String, nullable=True, index=True)  # Track user session
     score = Column(Integer, nullable=False)
     total = Column(Integer, nullable=False)
     total_points = Column(Integer, default=0)  # Total points earned

@@ -81,7 +81,7 @@ migrate:
 
 # Seed database
 seed:
-	python -c "from app.services import seed_initial_data; seed_initial_data()"
+	python -c "from app.services.progress_service import seed_initial_data; seed_initial_data()"
 
 # Cleanup temporary files
 clean:
