@@ -1,7 +1,7 @@
 ﻿# TODO.md — TestLearn: Образовательная платформа по тестированию ПО
 
 ## Обзор проекта
-- **Версия**: 2.2.0
+- **Версия**: 2.3.0
 - **Фреймворк**: FastAPI 0.118.0 + SQLAlchemy 2.0 + SQLite
 - **Цель**: Курсовой проект по дисциплине "Базы данных" (МФЮА)
 - **Лицензия**: MIT
@@ -21,13 +21,13 @@
 ### Геймификация
 - [x] Система уровней (1-50) с XP
 - [x] Достижения (10+)
-- [x] Таблица лидеров
+- [x] Таблица лидеров с пагинацией
 - [x] Ежедневные вызовы
 
 ### Социальные функции
-- [x] Комментарии к темам
+- [x] Комментарии к темам с пагинацией
 - [x] Лайки комментариев
-- [x] Уведомления пользователей
+- [x] Уведомления пользователей с пагинацией
 - [x] Сертификаты о прохождении
 
 ### Технические улучшения
@@ -40,7 +40,7 @@
 - [x] Расширенный поиск с подсветкой
 - [x] Swagger UI + ReDoc документация
 - [x] Makefile с удобными командами
-- [x] Alembic миграции настроены (начальная миграция)
+- [x] Alembic миграции настроены и проверены
 - [x] .env.example создан
 - [x] Сервисы разделены на модули (progress_service, gamification_service, social_service, search_service)
 - [x] Исправлен баг в auth.py (Response с dict content)
@@ -52,61 +52,58 @@
 - [x] Исправлена модель User с правильными relationship
 - [x] Модульная структура routers
 - [x] QuizCheckerService для автоматического контроля вопросов
-- [x] CertificateService для генерации сертификатов
+- [x] CertificateService для генерации PDF сертификатов
 - [x] Docker Compose с профилями (dev, test, production)
 - [x] Health checks в Docker
+- [x] **CSRF защита** для форм (middleware)
+- [x] **Улучшенная валидация** feedback (name, email, message, rating)
+- [x] **Пагинация** для leaderboard, комментариев и уведомлений
+- [x] **Исправлен формат alembic.ini**
+- [x] **59 тестов API** с 100% проходимостью
 
 ---
 
 ## 🔧 Текущие проблемы и задачи
 
 ### Критические (P0)
-- [ ] **Alembic миграции не проверены** — миграции созданы, но не протестированы на чистом БД
-  - **Решение**: Удалить БД, запустить миграции заново, проверить создание всех таблиц
-- [ ] **Отсутствует data/ директория** — Docker volume указывает на несуществующую папку
-  - **Решение**: Создать `data/` и `logs/` директории с .gitignore
+- [ ] **Тесты для CertificateService** — добавить unit тесты для генерации сертификатов
+- [ ] **Тесты для QuizCheckerService** — добавить тесты для проверки качества вопросов
 
 ### Высокий приоритет (P1)
-- [ ] **Улучшить безопасность**
-  - Добавить CSRF защиту для форм
-  - Валидация email в feedback endpoint
-  - Rate limiting на sensitive endpoints (auth, feedback)
 - [x] **Добавить индексацию БД** ✅
   - Индексы для `session_id` в QuizResult
   - Индексы для `user_id` в комментариях и уведомлениях
   - Индексы для `created_at` в quiz_results
+- [ ] **Улучшить безопасность**
+  - CSRF защита для форм (реализовано middleware)
+  - Rate limiting на sensitive endpoints (auth, feedback) — уже есть
 
 ### Средний приоритет (P2)
-- [ ] **Оптимизация производительности**
-  - Пагинация на leaderboard (уже есть limit, но нужна offset)
-  - Пагинация комментариев
-  - Кэширование статистики
+- [x] **Оптимизация производительности** ✅
+  - Пагинация на leaderboard (реализовано)
+  - Пагинация комментариев (реализовано)
+  - Кэширование статистики — в планах
 - [ ] **Доработать документацию**
   - Добавить примеры запросов в README
   - API changelog
-- [ ] **Добавить тесты**
-  - Тесты для CertificateService
-  - Тесты для QuizCheckerService
-  - Интеграционные тесты для auth flow
 
 ---
 
 ## 📋 План разработки (dev → main)
 
 ### Безопасность
-1. CSRF защита для форм
-2. Валидация email в feedback
-3. Rate limiting на sensitive endpoints
+1. ✅ CSRF защита для форм
+2. ✅ Rate limiting на sensitive endpoints
 
 ### Производительность
 1. ✅ Индексы для часто используемых запросов
-2. Пагинация на списках (leaderboard, комментарии)
-3. Кэширование статистики
+2. ✅ Пагинация на списках (leaderboard, комментарии, уведомления)
+3. [ ] Кэширование статистики
 
 ### Тестирование
-1. Добавить тесты для CertificateService
-2. Добавить тесты для QuizCheckerService
-3. Интеграционные тесты auth flow
+1. [ ] Добавить тесты для CertificateService
+2. [ ] Добавить тесты для QuizCheckerService
+3. [ ] Интеграционные тесты auth flow
 
 ---
 
@@ -114,7 +111,7 @@
 
 | Метрика | Значение |
 |---------|----------|
-| Версия | 2.2.0 |
+| Версия | 2.3.0 |
 | Тесты | 59/59 (100%) |
 | Готовность к демо | ✅ Да |
 | Готовность к продакшену | ✅ Да |
@@ -146,38 +143,39 @@ git push origin main
 ### Текущая структура
 ```
 app/
-├── routers/ # API endpoints (модульная структура)
+├── routers/              # API endpoints (модульная структура)
 │   ├── __init__.py
 │   ├── auth.py
 │   ├── categories.py
 │   ├── feedback.py
-│   ├── gamification.py
+│   ├── gamification.py   # Обновлён с пагинацией
 │   ├── glossary.py
 │   ├── health.py
 │   ├── pages.py
 │   ├── progress.py
 │   ├── quizzes.py
 │   ├── search.py
-│   ├── social.py
+│   ├── social.py         # Обновлён с пагинацией
 │   └── topics.py
-├── db/ # SQLAlchemy models, database setup
+├── db/                   # SQLAlchemy models, database setup
 │   ├── __init__.py
 │   ├── database.py
 │   └── models.py
-├── middleware/ # Rate limiting
-│   └── rate_limit.py
-├── utils/ # Cache, helpers
+├── middleware/           # Middleware
+│   ├── rate_limit.py
+│   └── csrf.py          # Новый CSRF middleware
+├── utils/               # Cache, helpers
 │   └── cache.py
-├── config/ # Конфигурация
-├── services/ # Модульные сервисы
+├── config/              # Конфигурация
+├── services/            # Модульные сервисы
 │   ├── __init__.py
-│   ├── gamification_service.py
+│   ├── gamification_service.py  # Обновлён с пагинацией
 │   ├── progress_service.py
 │   ├── quiz_checker_service.py
 │   ├── search_service.py
-│   └── social_service.py
-├── security.py # Password hashing, sessions
-└── schemas.py # Pydantic models
+│   └── social_service.py        # Обновлён с пагинацией
+├── security.py          # Password hashing, sessions
+└── schemas.py           # Pydantic models (обновлён с валидацией)
 ```
 
 ### Рекомендации
@@ -190,15 +188,23 @@ app/
 
 ## 🐛 Известные issues
 
-1. **LeaderboardService.get_leaderboard** — использует `limit=10, db: Session = None`, нужно проверить на None
-2. **Отсутствует валидация** на некоторых endpoints (например, content комментария)
-3. **Нет строгих типов** в некоторых функциях (Union вместо Literal)
+1. ✅ **LeaderboardService.get_leaderboard** — исправлено, теперь проверяет на None
+2. ✅ **Отсутствует валидация** на некоторых endpoints — добавлена в schemas.py
+3. ✅ **Нет строгих типов** в некоторых функциях — улучшено
 4. ✅ **data/ директория** создана — Docker volumes работают
 5. ✅ **logs/ директория** создана — логирование работает
 
 ---
 
 ## 📅 История версий
+
+### 2.3.0 (01.05.2026)
+- **Добавлена CSRF защита**: новый middleware `app/middleware/csrf.py`
+- **Улучшена валидация feedback**: name, email, message, rating с строгими правилами
+- **Добавлена пагинация**: leaderboard, комментарии, уведомления
+- **Исправлен alembic.ini**: убран docstring, правильный формат
+- **Обновлены тесты**: адаптированы под новый формат ответа с пагинацией
+- **59 тестов API** с 100% проходимостью
 
 ### 2.2.0 (01.05.2026)
 - **Удалено дублирование кода**: `seed_initial_data` перенесена в `progress_service.py`, удалена из `services.py` (256 строк)
