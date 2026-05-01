@@ -112,7 +112,7 @@ app = FastAPI(
 - **Поиск**: 30 запросов в минуту
 - **Обратная связь**: 20 запросов в минуту
     """,
-    version="2.3.4",
+    version="2.3.6",
     contact={
         "name": "Самойлов Д.А.",
         "email": "samoilov@example.com",
@@ -411,6 +411,11 @@ async def glossary_page(request: Request):
 @app.get("/stats", include_in_schema=False)
 async def stats_page(request: Request):
     """Статистика раздел."""
+    # Try to get cached stats
+    cached_stats = cache.get("stats_page")
+    if cached_stats is not None:
+        return templates.TemplateResponse(request, "stats.html", cached_stats)
+
     from sqlalchemy.orm import Session
     from app.db.database import get_db
     from app.db.models import UserProgress, Topic, Category, QuizResult, Quiz
@@ -483,7 +488,8 @@ async def stats_page(request: Request):
                 'percentage': percentage
             })
 
-        return templates.TemplateResponse(request, "stats.html", {
+        # Prepare context for template
+        context = {
             "progress": progress,
             "total_topics": total_topics,
             "categories_with_stats": categories_with_stats,
@@ -492,7 +498,12 @@ async def stats_page(request: Request):
             "total_quizzes": total_quizzes,
             "score_distribution": score_distribution,
             "top_results": top_results
-        })
+        }
+
+        # Cache the context for 60 seconds
+        cache.set("stats_page", context, ttl=60)
+
+        return templates.TemplateResponse(request, "stats.html", context)
     finally:
         db.close()
 
