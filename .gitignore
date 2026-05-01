@@ -45,4 +45,8 @@ build/
 dist/
 *.egg
 *.egg-info/
+
+# Data and logs directories
+data/
+logs/
 ```

@@ -8,7 +8,7 @@
 
 ---
 
-## ✅ Завершённые функции (по состоянию на 30.04.2026)
+## ✅ Завершённые функции (по состоянию на 01.05.2026)
 
 ### Основные модули
 - [x] 5 категорий тестирования с 16 темами
@@ -50,57 +50,63 @@
 - [x] Регистрация пользователей
 - [x] Восстановление пароля
 - [x] Исправлена модель User с правильными relationship
+- [x] Модульная структура routers
+- [x] QuizCheckerService для автоматического контроля вопросов
+- [x] CertificateService для генерации сертификатов
+- [x] Docker Compose с профилями (dev, test, production)
+- [x] Health checks в Docker
 
 ---
 
 ## 🔧 Текущие проблемы и задачи
 
 ### Критические (P0)
-- [x] **Alembic миграции не настроены** — изменения в моделях не отслеживаются
-  - Модели: `Comment`, `Notification`, `AdminUser` добавлены, но миграции отсутствуют
-  - **Решение**: Инициализировать Alembic и создать начальные миграции ✅ ВЫПОЛНЕНО
-- [x] **Отсутствует .env.example** — нет шаблона конфигурации
-  - **Решение**: Создать файл с обязательными переменными ✅ ВЫПОЛНЕНО
+- [ ] **Alembic миграции не проверены** — миграции созданы, но не протестированы на чистом БД
+  - **Решение**: Удалить БД, запустить миграции заново, проверить создание всех таблиц
+- [ ] **Отсутствует data/ директория** — Docker volume указывает на несуществующую папку
+  - **Решение**: Создать `data/` и `logs/` директории с .gitignore
 
 ### Высокий приоритет (P1)
-- [x] **Архитектура сервисов** — весь код в `app/services.py` (653 строки)
-  - Нужно разделить на модули: `progress_service.py`, `gamification_service.py`, `social_service.py`
-  - **Решение**: Сервисы разделены на модули в `app/services/` ✅ ВЫПОЛНЕНО
-- [x] **Отсутствуют тесты для новых функций**
-  - Комменты, уведомления, таблица лидеров, сертификаты не покрыты тестами
-  - **Решение**: Добавлены тесты в `tests/test_api.py` ✅ ВЫПОЛНЕНО
-  - Новые тесты: `test_social_comments_get`, `test_social_comments_create`, `test_social_comments_like`
-  - Новые тесты: `test_social_notifications`, `test_social_notifications_mark_read`
-  - Новые тесты: `test_gamification_certificate`
-
-### Средний приоритет (P2)
 - [ ] **Улучшить безопасность**
   - Добавить CSRF защиту для форм
-  - Валидация email в feedback
-  - Rate limiting на sensitive endpoints
+  - Валидация email в feedback endpoint
+  - Rate limiting на sensitive endpoints (auth, feedback)
+- [ ] **Добавить индексацию БД**
+  - Индексы для `session_id` в UserProgress
+  - Индексы для `user_id` в комментариях и уведомлениях
+  - Индексы для `created_at` в quiz_results
+
+### Средний приоритет (P2)
 - [ ] **Оптимизация производительности**
-  - Добавить индексы для часто используемых запросов
-  - Пагинация на всех списках (leaderboard, комментарии)
+  - Пагинация на leaderboard (уже есть limit, но нужна offset)
+  - Пагинация комментариев
+  - Кэширование статистики
 - [ ] **Доработать документацию**
   - Добавить примеры запросов в README
   - API changelog
+- [ ] **Добавить тесты**
+  - Тесты для CertificateService
+  - Тесты для QuizCheckerService
+  - Интеграционные тесты для auth flow
 
 ---
 
 ## 📋 План разработки (dev → main)
 
 ### Безопасность
-- [ ] CSRF защита для форм
-- [ ] Валидация email в feedback
-- [ ] Rate limiting на sensitive endpoints
+1. CSRF защита для форм
+2. Валидация email в feedback
+3. Rate limiting на sensitive endpoints
 
 ### Производительность
-- [ ] Индексы для часто используемых запросов
-- [ ] Пагинация на списках (leaderboard, комментарии)
+1. Индексы для часто используемых запросов
+2. Пагинация на списках (leaderboard, комментарии)
+3. Кэширование статистики
 
-### Документация
-- [ ] Примеры запросов в README
-- [ ] API changelog
+### Тестирование
+1. Добавить тесты для CertificateService
+2. Добавить тесты для QuizCheckerService
+3. Интеграционные тесты auth flow
 
 ---
 
@@ -111,7 +117,7 @@
 | Версия | 2.2.0 |
 | Тесты | 44/44 (100%) |
 | Готовность к демо | ✅ Да |
-| Готовность к продакшену | ✅ Да |
+| Готовность к продакшену | ⚠️ Требуется проверка миграций |
 
 ---
 
@@ -140,29 +146,46 @@ git push origin main
 ### Текущая структура
 ```
 app/
-├── routers/          # API endpoints (модульная структура ✅)
-├── db/              # SQLAlchemy models, database setup
-├── middleware/      # Rate limiting
-├── utils/           # Cache, helpers
-├── config/          # Конфигурация
-├── security.py      # Password hashing, sessions
-├── schemas.py       # Pydantic models
-└── services/        # Модульные сервисы ✅
-    ├── __init__.py
-    ├── progress_service.py
-    ├── gamification_service.py
-    ├── social_service.py
-    └── search_service.py
+├── routers/ # API endpoints (модульная структура)
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── categories.py
+│   ├── feedback.py
+│   ├── gamification.py
+│   ├── glossary.py
+│   ├── health.py
+│   ├── pages.py
+│   ├── progress.py
+│   ├── quizzes.py
+│   ├── search.py
+│   ├── social.py
+│   └── topics.py
+├── db/ # SQLAlchemy models, database setup
+│   ├── __init__.py
+│   ├── database.py
+│   └── models.py
+├── middleware/ # Rate limiting
+│   └── rate_limit.py
+├── utils/ # Cache, helpers
+│   └── cache.py
+├── config/ # Конфигурация
+├── services/ # Модульные сервисы
+│   ├── __init__.py
+│   ├── gamification_service.py
+│   ├── progress_service.py
+│   ├── quiz_checker_service.py
+│   ├── search_service.py
+│   └── social_service.py
+├── security.py # Password hashing, sessions
+└── schemas.py # Pydantic models
 ```
 
 ### Рекомендации
-1. Вынести сервисы в отдельные файлы:
-   - `app/services/progress_service.py` ✅
-   - `app/services/gamification_service.py` ✅
-   - `app/services/social_service.py` ✅
-   - `app/services/certificate_service.py`
-2. Добавить `app/services/__init__.py` для экспорта ✅
-3. Переместить модели в `app/db/models.py` (уже частично сделано) ✅
+1. ✅ Сервисы разделены на модули
+2. ✅ Модели в `app/db/models.py`
+3. ⚠️ Добавить `app/db/__init__.py` с экспортом моделей
+4. ⚠️ Добавить `app/routers/__init__.py` с экспортом роутеров
+5. 📌 Добавить сертификаты в `app/services/certificate_service.py`
 
 ---
 
@@ -171,6 +194,8 @@ app/
 1. **LeaderboardService.get_leaderboard** — использует `limit=10, db: Session = None`, нужно проверить на None
 2. **Отсутствует валидация** на некоторых endpoints (например, content комментария)
 3. **Нет строгих типов** в некоторых функциях (Union вместо Literal)
+4. **data/ директория** не создана — Docker volume будет падать
+5. **logs/ директория** не создана — логирование не будет работать
 
 ---
 
@@ -191,6 +216,9 @@ app/
 - **Добавлена регистрация пользователей** с валидацией
 - **Добавлена страница восстановления пароля**
 - **Добавлена модель User** с правильными relationship для achievements
+- **Добавлен QuizCheckerService** для автоматического контроля качества вопросов
+- **Добавлен CertificateService** для генерации PDF сертификатов
+- **Docker Compose профили**: dev, test, production разделены
 
 ### 2.1.0 (29.04.2026)
 - Rate Limiting, кэширование, оптимизация SQL
