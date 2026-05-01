@@ -1,7 +1,9 @@
-"""Tests for QuizCheckerService."""
+"""Tests for QuizCheckerService and CertificateService."""
 import pytest
+import time
+from datetime import datetime, UTC
 from app.db.models import (
-    Question,
+    Question, UserProgress,
     QUESTION_TYPE_SINGLE_CHOICE,
     QUESTION_TYPE_MULTIPLE_CHOICE,
     QUESTION_TYPE_TRUE_FALSE,
@@ -10,7 +12,134 @@ from app.db.models import (
     QUESTION_TYPE_ORDERING,
     QUESTION_TYPE_FILL_BLANK
 )
+from app.models import Certificate
 from app.services.quiz_checker_service import QuizCheckerService
+from app.services.gamification_service import CertificateService, LeaderboardService
+from app.db.database import SessionLocal
+
+
+def get_unique_session_id():
+    """Generate unique session ID using timestamp."""
+    return f"session_{int(time.time() * 1000)}"
+
+
+# ==================== CertificateService Tests ====================
+
+class TestCertificateService:
+    """Tests for CertificateService."""
+
+    @pytest.fixture
+    def db_session(self):
+        """Create a fresh database session for each test."""
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    def test_generate_certificate_no_progress(self, db_session):
+        """Test certificate generation with no progress."""
+        result = CertificateService.generate_certificate(get_unique_session_id(), db_session)
+        assert result is None
+
+    def test_generate_certificate_insufficient_quizzes(self, db_session):
+        """Test certificate generation with less than 5 quizzes passed."""
+        session_id = get_unique_session_id()
+        progress = UserProgress(
+            session_id=session_id,
+            topics_read=10,
+            quizzes_passed=3,
+            total_score=100
+        )
+        db_session.add(progress)
+        db_session.commit()
+        result = CertificateService.generate_certificate(session_id, db_session)
+        assert result is None
+
+    def test_generate_certificate_success(self, db_session):
+        """Test successful certificate generation."""
+        session_id = get_unique_session_id()
+        progress = UserProgress(
+            session_id=session_id,
+            topics_read=16,
+            quizzes_passed=5,
+            total_score=500
+        )
+        db_session.add(progress)
+        db_session.commit()
+        result = CertificateService.generate_certificate(session_id, db_session)
+        assert result is not None
+        assert result.user_id == progress.id
+        assert result.quizzes_passed == 5
+        assert result.topics_completed == 16
+        assert result.level >= 1
+        assert "User_" in result.username
+        assert result.issued_at is not None
+        assert result.certificate_url.startswith("/certificates/")
+
+    def test_generate_certificate_exactly_5_quizzes(self, db_session):
+        """Test certificate generation with exactly 5 quizzes (minimum requirement)."""
+        session_id = get_unique_session_id()
+        progress = UserProgress(
+            session_id=session_id,
+            topics_read=5,
+            quizzes_passed=5,
+            total_score=250
+        )
+        db_session.add(progress)
+        db_session.commit()
+        result = CertificateService.generate_certificate(session_id, db_session)
+        assert result is not None
+        assert result.quizzes_passed == 5
+
+    def test_certificate_url_format(self, db_session):
+        """Test certificate URL format."""
+        session_id = get_unique_session_id()
+        progress = UserProgress(
+            session_id=session_id,
+            topics_read=10,
+            quizzes_passed=6,
+            total_score=300
+        )
+        db_session.add(progress)
+        db_session.commit()
+        result = CertificateService.generate_certificate(session_id, db_session)
+        assert result is not None
+        assert result.certificate_url.startswith("/certificates/")
+        assert str(progress.id) in result.certificate_url
+
+    def test_certificate_username_format(self, db_session):
+        """Test that username format is correct."""
+        session_id = get_unique_session_id()
+        progress = UserProgress(
+            session_id=session_id,
+            topics_read=10,
+            quizzes_passed=7,
+            total_score=350
+        )
+        db_session.add(progress)
+        db_session.commit()
+        result = CertificateService.generate_certificate(session_id, db_session)
+        assert result is not None
+        assert result.username.startswith("User_")
+        # Username should be "User_" + first 8 chars of session_id
+        assert len(result.username) == 13
+
+    def test_certificate_issued_at_is_utc(self, db_session):
+        """Test that issued_at timestamp is in UTC."""
+        session_id = get_unique_session_id()
+        progress = UserProgress(
+            session_id=session_id,
+            topics_read=10,
+            quizzes_passed=5,
+            total_score=400
+        )
+        db_session.add(progress)
+        db_session.commit()
+        result = CertificateService.generate_certificate(session_id, db_session)
+        assert result is not None
+        assert "T" in result.issued_at  # ISO format
+        assert result.issued_at is not None
 
 
 # ==================== QuizCheckerService Tests ====================
