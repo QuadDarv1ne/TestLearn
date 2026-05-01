@@ -64,7 +64,7 @@ class QuizCheckerService:
         expected = question.correct_answer.strip()
         user = user_answer.strip()
         
-        if question.case_sensitive:
+        if question.answer_case_sensitive:
             is_correct = user == expected
         else:
             is_correct = user.lower() == expected.lower()
@@ -127,7 +127,7 @@ class QuizCheckerService:
         expected = question.correct_answer.strip()
         user = user_answer.strip()
         
-        if question.case_sensitive:
+        if question.answer_case_sensitive:
             is_correct = user == expected
         else:
             is_correct = user.lower() == expected.lower()
