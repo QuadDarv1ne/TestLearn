@@ -241,3 +241,30 @@ app/
 
 ### 1.0.0 (26.04.2026)
 - Initial release: категории, темы, викторины, глоссарий
+
+---
+
+## 📌 Примечания по разработке
+
+### Git workflow
+- **dev** — рабочая ветка для разработки
+- **main** — стабильная версия для продакшена
+- Все изменения сначала в dev, тестирование, затем merge в main
+
+### Тестирование
+- Тесты находятся в `tests/` директории
+- Запуск: `pytest tests/ -v`
+- Coverage: `pytest tests/ -v --cov=app --cov-report=html`
+
+### Docker
+- Production: `docker-compose up --build`
+- Development: `docker-compose --profile dev up`
+- Tests: `docker-compose --profile test run test`
+
+### Makefile команды
+- `make install` — установить зависимости
+- `make run` — запустить dev сервер
+- `make test` — запустить тесты
+- `make docker-up` — запустить Docker
+- `make migrate` — применить миграции
+- `make clean` — очистить временные файлы
