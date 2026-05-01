@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TestLearn тАФ ╨Ю╤Б╨╜╨╛╨▓╤Л ╤В╨╡╤Б╤В╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╨Я╨Ю{% endblock %}</title>
+    <title>{% block title %}TestLearn — Основы тестирования ПО{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -154,7 +154,7 @@ function updateThemeIcon() {
 document.addEventListener('DOMContentLoaded', updateThemeIcon);
 </script>
 
-<!-- ╨Э╨░╨▓╨╕╨│╨░╤Ж╨╕╤П -->
+<!-- Навигация -->
 <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
@@ -165,60 +165,60 @@ document.addEventListener('DOMContentLoaded', updateThemeIcon);
                 <span class="text-xl font-bold text-gray-900">Test<span style="color: #059669;">Learn</span></span>
             </a>
             <div class="hidden lg:flex items-center gap-5 xl:gap-7">
-                <a href="/" class="nav-link font-medium text-sm {% if active_page == 'home' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'home' %}style="color: #047857;"{% endif %}>╨У╨╗╨░╨▓╨╜╨░╤П</a>
-                <a href="/theory" class="nav-link font-medium text-sm {% if active_page == 'theory' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'theory' %}style="color: #047857;"{% endif %}>╨в╨╡╨╛╤А╨╕╤П</a>
-                <a href="/quiz" class="nav-link font-medium text-sm {% if active_page == 'quiz' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'quiz' %}style="color: #047857;"{% endif %}>╨в╨╡╤Б╤В╤Л</a>
-                <a href="/glossary" class="nav-link font-medium text-sm {% if active_page == 'glossary' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'glossary' %}style="color: #047857;"{% endif %}>╨У╨╗╨╛╤Б╤Б╨░╤А╨╕╨╣</a>
-                <a href="/bookmarks" class="nav-link font-medium text-sm {% if active_page == 'bookmarks' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'bookmarks' %}style="color: #047857;"{% endif %}>╨Ч╨░╨║╨╗╨░╨┤╨║╨╕</a>
-                <a href="/stats" class="nav-link font-medium text-sm {% if active_page == 'stats' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'stats' %}style="color: #047857;"{% endif %}>╨б╤В╨░╤В╨╕╤Б╤В╨╕╨║╨░</a>
-                <a href="/database" class="nav-link font-medium text-sm {% if active_page == 'database' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'database' %}style="color: #047857;"{% endif %}>╨С╨░╨╖╨░ ╨┤╨░╨╜╨╜╤Л╤Е</a>
-                <a href="/leaderboard" class="nav-link font-medium text-sm {% if active_page == 'leaderboard' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'leaderboard' %}style="color: #047857;"{% endif %}>╨Ы╨╕╨┤╨╡╤А╤Л</a>
-                <button onclick="toggleTheme()" id="theme-toggle" class="nav-link font-medium text-sm text-gray-600 hover:text-emerald-700 flex items-center gap-1" style="background-color: transparent; border: none; cursor: pointer; padding: 0;" aria-label="╨Я╨╡╤А╨╡╨║╨╗╤О╤З╨╕╤В╤М ╤В╨╡╨╝╤Г">
+                <a href="/" class="nav-link font-medium text-sm {% if active_page == 'home' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'home' %}style="color: #047857;"{% endif %}>Главная</a>
+                <a href="/theory" class="nav-link font-medium text-sm {% if active_page == 'theory' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'theory' %}style="color: #047857;"{% endif %}>Теория</a>
+                <a href="/quiz" class="nav-link font-medium text-sm {% if active_page == 'quiz' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'quiz' %}style="color: #047857;"{% endif %}>Тесты</a>
+                <a href="/glossary" class="nav-link font-medium text-sm {% if active_page == 'glossary' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'glossary' %}style="color: #047857;"{% endif %}>Глоссарий</a>
+                <a href="/bookmarks" class="nav-link font-medium text-sm {% if active_page == 'bookmarks' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'bookmarks' %}style="color: #047857;"{% endif %}>Закладки</a>
+                <a href="/stats" class="nav-link font-medium text-sm {% if active_page == 'stats' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'stats' %}style="color: #047857;"{% endif %}>Статистика</a>
+                <a href="/database" class="nav-link font-medium text-sm {% if active_page == 'database' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'database' %}style="color: #047857;"{% endif %}>Базы данных</a>
+                <a href="/leaderboard" class="nav-link font-medium text-sm {% if active_page == 'leaderboard' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'leaderboard' %}style="color: #047857;"{% endif %}>Лидеры</a>
+                <button onclick="toggleTheme()" id="theme-toggle" class="nav-link font-medium text-sm text-gray-600 hover:text-emerald-700 flex items-center gap-1" style="background-color: transparent; border: none; cursor: pointer; padding: 0;" aria-label="Переключить тему">
                     <svg id="theme-icon-sun" class="w-5 h-5" style="display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                     <svg id="theme-icon-moon" class="w-5 h-5" style="display:block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                    <span class="hidden xl:inline">╨в╨╡╨╝╨░</span>
+                    <span class="hidden xl:inline">Тема</span>
                 </button>
-                <a href="/about" class="nav-link font-medium text-sm {% if active_page == 'about' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'about' %}style="color: #047857;"{% endif %}>╨Ю ╨┐╤А╨╛╨╡╨║╤В╨╡</a>
-                <a href="/feedback" class="nav-link font-medium text-sm {% if active_page == 'feedback' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'feedback' %}style="color: #047857;"{% endif %}>╨Ю╨▒╤А╨░╤В╨╜╨░╤П ╤Б╨▓╤П╨╖╤М</a>
+                <a href="/about" class="nav-link font-medium text-sm {% if active_page == 'about' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'about' %}style="color: #047857;"{% endif %}>О проекте</a>
+                <a href="/feedback" class="nav-link font-medium text-sm {% if active_page == 'feedback' %}text-emerald-700{% else %}text-gray-600 hover:text-emerald-700{% endif %}" {% if active_page == 'feedback' %}style="color: #047857;"{% endif %}>Обратная связь</a>
                 {% set session_id = request.cookies.get('admin_session') %}
                 {% if session_id %}
-                    <a href="/logout" class="nav-link font-medium text-sm text-gray-600 hover:text-emerald-700">╨Т╤Л╨╣╤В╨╕</a>
+                    <a href="/logout" class="nav-link font-medium text-sm text-gray-600 hover:text-emerald-700">Выйти</a>
                 {% else %}
-                    <a href="/login" class="nav-link font-medium text-sm text-gray-600 hover:text-emerald-700">╨Т╨╛╨╣╤В╨╕</a>
+                    <a href="/login" class="nav-link font-medium text-sm text-gray-600 hover:text-emerald-700">Войти</a>
                 {% endif %}
             </div>
-            <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="lg:hidden p-2 rounded-lg hover:bg-gray-100" style="background-color: transparent;" aria-label="╨Ь╨╡╨╜╤О">
+            <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="lg:hidden p-2 rounded-lg hover:bg-gray-100" style="background-color: transparent;" aria-label="Меню">
                 <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
         </div>
         <div id="mobile-menu" class="hidden lg:hidden pb-4 space-y-1">
-            <a href="/" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'home' %}font-semibold{% endif %}" {% if active_page == 'home' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨У╨╗╨░╨▓╨╜╨░╤П</a>
-            <a href="/theory" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'theory' %}font-semibold{% endif %}" {% if active_page == 'theory' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨в╨╡╨╛╤А╨╕╤П</a>
-            <a href="/quiz" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'quiz' %}font-semibold{% endif %}" {% if active_page == 'quiz' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨в╨╡╤Б╤В╤Л</a>
-            <a href="/glossary" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'glossary' %}font-semibold{% endif %}" {% if active_page == 'glossary' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨У╨╗╨╛╤Б╤Б╨░╤А╨╕╨╣</a>
-            <a href="/bookmarks" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'bookmarks' %}font-semibold{% endif %}" {% if active_page == 'bookmarks' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨Ч╨░╨║╨╗╨░╨┤╨║╨╕</a>
-            <a href="/stats" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'stats' %}font-semibold{% endif %}" {% if active_page == 'stats' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨б╤В╨░╤В╨╕╤Б╤В╨╕╨║╨░</a>
-            <a href="/database" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'database' %}font-semibold{% endif %}" {% if active_page == 'database' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨С╨░╨╖╨░ ╨┤╨░╨╜╨╜╤Л╤Е</a>
-            <a href="/leaderboard" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'leaderboard' %}font-semibold{% endif %}" {% if active_page == 'leaderboard' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨Ы╨╕╨┤╨╡╤А╤Л</a>
-            <a href="/about" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'about' %}font-semibold{% endif %}" {% if active_page == 'about' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨Ю ╨┐╤А╨╛╨╡╨║╤В╨╡</a>
-            <a href="/feedback" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'feedback' %}font-semibold{% endif %}" {% if active_page == 'feedback' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>╨Ю╨▒╤А╨░╤В╨╜╨░╤П ╤Б╨▓╤П╨╖╤М</a>
+            <a href="/" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'home' %}font-semibold{% endif %}" {% if active_page == 'home' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Главная</a>
+            <a href="/theory" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'theory' %}font-semibold{% endif %}" {% if active_page == 'theory' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Теория</a>
+            <a href="/quiz" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'quiz' %}font-semibold{% endif %}" {% if active_page == 'quiz' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Тесты</a>
+            <a href="/glossary" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'glossary' %}font-semibold{% endif %}" {% if active_page == 'glossary' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Глоссарий</a>
+            <a href="/bookmarks" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'bookmarks' %}font-semibold{% endif %}" {% if active_page == 'bookmarks' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Закладки</a>
+            <a href="/stats" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'stats' %}font-semibold{% endif %}" {% if active_page == 'stats' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Статистика</a>
+            <a href="/database" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'database' %}font-semibold{% endif %}" {% if active_page == 'database' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Базы данных</a>
+            <a href="/leaderboard" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'leaderboard' %}font-semibold{% endif %}" {% if active_page == 'leaderboard' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Лидеры</a>
+            <a href="/about" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'about' %}font-semibold{% endif %}" {% if active_page == 'about' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>О проекте</a>
+            <a href="/feedback" class="block px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium {% if active_page == 'feedback' %}font-semibold{% endif %}" {% if active_page == 'feedback' %}style="background-color: #ecfdf5; color: #047857;"{% else %}style="background-color: transparent;"{% endif %}>Обратная связь</a>
             {% set session_id = request.cookies.get('admin_session') %}
             {% if session_id %}
-                <a href="/logout" class="block w-full text-left px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium" style="background-color: transparent;">╨Т╤Л╨╣╤В╨╕</a>
+                <a href="/logout" class="block w-full text-left px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium" style="background-color: transparent;">Выйти</a>
             {% else %}
-                <a href="/login" class="block w-full text-left px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium" style="background-color: transparent;">╨Т╨╛╨╣╤В╨╕</a>
+                <a href="/login" class="block w-full text-left px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium" style="background-color: transparent;">Войти</a>
             {% endif %}
             <button onclick="toggleTheme()" class="block w-full text-left px-4 py-2.5 rounded-lg text-gray-700 text-sm font-medium" style="background-color: transparent;">
-                ЁЯМУ ╨Я╨╡╤А╨╡╨║╨╗╤О╤З╨╕╤В╤М ╤В╨╡╨╝╤Г
+                ЁЯМУ Переключить тему
             </button>
         </div>
     </div>
 </nav>
 
-<!-- ╨Ъ╨╛╨╜╤В╨╡╨╜╤В -->
+<!-- Контент -->
 {% block content %}{% endblock %}
 
-<!-- ╨Я╨╛╨┤╨▓╨░╨╗ -->
+<!-- Подвал -->
 <footer class="bg-gray-900 text-gray-400 py-10 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid md:grid-cols-3 gap-8 mb-8">
@@ -229,33 +229,33 @@ document.addEventListener('DOMContentLoaded', updateThemeIcon);
                     </div>
                     <span class="text-white font-bold">TestLearn</span>
                 </div>
-                <p class="text-sm leading-relaxed">╨Ю╨▒╤А╨░╨╖╨╛╨▓╨░╤В╨╡╨╗╤М╨╜╨░╤П ╨┐╨╗╨░╤В╤Д╨╛╤А╨╝╨░ ╨┤╨╗╤П ╨╕╨╖╤Г╤З╨╡╨╜╨╕╤П ╨╛╤Б╨╜╨╛╨▓ ╤В╨╡╤Б╤В╨╕╤А╨╛╨▓╨░╨╜╨╕╤П ╨┐╤А╨╛╨│╤А╨░╨╝╨╝╨╜╨╛╨│╨╛ ╨╛╨▒╨╡╤Б╨┐╨╡╤З╨╡╨╜╨╕╤П.</p>
+                <p class="text-sm leading-relaxed">Образовательная платформа для изучения основ тестирования программного обеспечения.</p>
             </div>
             <div>
-                <h4 class="text-white font-semibold mb-3">╨Э╨░╨▓╨╕╨│╨░╤Ж╨╕╤П</h4>
+                <h4 class="text-white font-semibold mb-3">Навигация</h4>
                 <div class="space-y-2 text-sm">
-                    <a href="/" class="block hover:text-white transition">╨У╨╗╨░╨▓╨╜╨░╤П</a>
-                    <a href="/theory" class="block hover:text-white transition">╨в╨╡╨╛╤А╨╕╤П</a>
-                    <a href="/quiz" class="block hover:text-white transition">╨в╨╡╤Б╤В╤Л</a>
-                    <a href="/glossary" class="block hover:text-white transition">╨У╨╗╨╛╤Б╤Б╨░╤А╨╕╨╣</a>
-                    <a href="/bookmarks" class="block hover:text-white transition">╨Ч╨░╨║╨╗╨░╨┤╨║╨╕</a>
-                    <a href="/stats" class="block hover:text-white transition">╨б╤В╨░╤В╨╕╤Б╤В╨╕╨║╨░</a>
-                    <a href="/database" class="block hover:text-white transition">╨С╨░╨╖╨░ ╨┤╨░╨╜╨╜╤Л╤Е</a>
-                    <a href="/leaderboard" class="block hover:text-white transition">╨Ы╨╕╨┤╨╡╤А╤Л</a>
-                    <a href="/about" class="block hover:text-white transition">╨Ю ╨┐╤А╨╛╨╡╨║╤В╨╡</a>
-                    <a href="/feedback" class="block hover:text-white transition">╨Ю╨▒╤А╨░╤В╨╜╨░╤П ╤Б╨▓╤П╨╖╤М</a>
+                    <a href="/" class="block hover:text-white transition">Главная</a>
+                    <a href="/theory" class="block hover:text-white transition">Теория</a>
+                    <a href="/quiz" class="block hover:text-white transition">Тесты</a>
+                    <a href="/glossary" class="block hover:text-white transition">Глоссарий</a>
+                    <a href="/bookmarks" class="block hover:text-white transition">Закладки</a>
+                    <a href="/stats" class="block hover:text-white transition">Статистика</a>
+                    <a href="/database" class="block hover:text-white transition">Базы данных</a>
+                    <a href="/leaderboard" class="block hover:text-white transition">Лидеры</a>
+                    <a href="/about" class="block hover:text-white transition">О проекте</a>
+                    <a href="/feedback" class="block hover:text-white transition">Обратная связь</a>
                 </div>
             </div>
             <div>
-                <h4 class="text-white font-semibold mb-3">╨Ю ╨┐╤А╨╛╨╡╨║╤В╨╡</h4>
+                <h4 class="text-white font-semibold mb-3">О проекте</h4>
                 <p class="text-sm leading-relaxed">╨Ъ╤Г╤А╤Б╨╛╨▓╨░╤П ╤А╨░╨▒╨╛╤В╨░ ╨┐╨╛ ╨┤╨╕╤Б╤Ж╨╕╨┐╨╗╨╕╨╜╨╡ &laquo;╨Ш╨╜╤В╨╡╤А╨╜╨╡╤В-╨┐╤А╨╛╨│╤А╨░╨╝╨╝╨╕╤А╨╛╨▓╨░╨╜╨╕╨╡&raquo;<br>
-                ╨Ь╨╛╤Б╨║╨╛╨▓╤Б╨║╨╕╨╣ ╨╛╨▒╨╗╨░╤Б╤В╨╜╨╛╨╣ ╤Д╨╕╨╗╨╕╨░╨╗ ╨Ь╨д╨о╨Р<br>
-                ╨Э╨░╨┐╤А╨░╨▓╨╗╨╡╨╜╨╕╨╡: 09.03.03 ╨Я╤А╨╕╨║╨╗╨░╨┤╨╜╨░╤П ╨╕╨╜╤Д╨╛╤А╨╝╨░╤В╨╕╨║╨░<br>
-                ╨б╤В╤Г╨┤╨╡╨╜╤В: ╨б╨░╨╝╨╛╨╣╨╗╨╛╨▓ ╨Ф.╨Р.</p>
+                Московский областной филиал МФЮА<br>
+                Направление: 09.03.03 Прикладная информатика<br>
+                Студент: Самойлов Д.А.</p>
             </div>
         </div>
         <div class="border-t border-gray-800 pt-6 text-center text-sm">
-            &copy; 2026 TestLearn. ╨Ъ╤Г╤А╤Б╨╛╨▓╨╛╨╣ ╨┐╤А╨╛╨╡╨║╤В ╨Ь╨д╨о╨Р
+            &copy; 2026 TestLearn. Курсовой проект МФЮА
         </div>
     </div>
 </footer>
