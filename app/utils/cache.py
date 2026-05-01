@@ -17,7 +17,7 @@ class Cache:
         Args:
             default_ttl: Время жизни записи в секундах (по умолчанию 5 минут)
         """
-        self._cache: Dict[str, tuple] = {}
+        self._cache: Dict[str, tuple[Any, float]] = {}
         self.default_ttl = default_ttl
 
     def get(self, key: str) -> Optional[Any]:

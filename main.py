@@ -112,7 +112,7 @@ app = FastAPI(
 - **Поиск**: 30 запросов в минуту
 - **Обратная связь**: 20 запросов в минуту
     """,
-    version="2.3.3",
+    version="2.3.4",
     contact={
         "name": "Самойлов Д.А.",
         "email": "samoilov@example.com",
