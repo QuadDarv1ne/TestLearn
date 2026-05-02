@@ -206,7 +206,122 @@ TestLearn provides a comprehensive RESTful API for programmatic access. API docu
 | `/api/live` | GET | Liveness check for Kubernetes |
 | `/api/info` | GET | Application version and info |
 
-## Getting Started
+### API Examples
+
+#### Authentication
+```bash
+# Register new user
+curl -X POST "http://localhost:8000/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "email": "test@example.com", "password": "password123"}'
+
+# Login
+curl -X POST "http://localhost:8000/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "password123"}'
+
+# Get current user info
+curl -X GET "http://localhost:8000/api/auth/me" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### Categories & Topics
+```bash
+# List all categories
+curl "http://localhost:8000/api/categories"
+
+# Get single category
+curl "http://localhost:8000/api/categories/1"
+
+# List all topics
+curl "http://localhost:8000/api/topics"
+
+# Get topics by category
+curl "http://localhost:8000/api/topics?category_id=1"
+
+# Get single topic
+curl "http://localhost:8000/api/topics/1"
+```
+
+#### Quizzes
+```bash
+# List all quizzes
+curl "http://localhost:8000/api/quizzes"
+
+# Get quiz questions
+curl "http://localhost:8000/api/quizzes/1/questions"
+
+# Submit quiz answers
+curl -X POST "http://localhost:8000/api/quizzes/1/submit" \
+  -H "Content-Type: application/json" \
+  -d '{"answers": [{"question_id": 1, "answer": "option_a"}]}'
+```
+
+#### Progress & Gamification
+```bash
+# Get user progress
+curl "http://localhost:8000/api/progress"
+
+# Add experience points
+curl -X POST "http://localhost:8000/api/progress/xp" \
+  -H "Content-Type: application/json" \
+  -d '{"xp": 10}'
+
+# Get leaderboard
+curl "http://localhost:8000/api/leaderboard?limit=10&page=1"
+
+# Get user achievements
+curl "http://localhost:8000/api/achievements"
+
+# Get daily challenge
+curl "http://localhost:8000/api/daily-challenge"
+```
+
+#### Social Features
+```bash
+# Get comments for topic
+curl "http://localhost:8000/api/social/comments/1?page=1"
+
+# Add comment
+curl -X POST "http://localhost:8000/api/social/comments" \
+  -H "Content-Type: application/json" \
+  -d '{"topic_id": 1, "content": "Great topic!"}'
+
+# Like comment
+curl -X POST "http://localhost:8000/api/social/comments/1/like"
+
+# Get notifications
+curl "http://localhost:8000/api/social/notifications?page=1"
+```
+
+#### Search & Feedback
+```bash
+# Search topics and glossary
+curl "http://localhost:8000/api/search?q=testing"
+
+# Submit feedback
+curl -X POST "http://localhost:8000/api/feedback" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "John", "email": "john@example.com", "message": "Great platform!", "rating": 5}'
+
+# Get feedback list
+curl "http://localhost:8000/api/feedback"
+```
+
+#### Export & Statistics
+```bash
+# Export progress as PDF
+curl "http://localhost:8000/api/progress/export/pdf"
+
+# Export quiz results as CSV
+curl "http://localhost:8000/api/progress/export/csv"
+
+# Get platform statistics
+curl "http://localhost:8000/api/stats"
+```
+
+
+
 
 ### Prerequisites
 - Python 3.9 or higher
