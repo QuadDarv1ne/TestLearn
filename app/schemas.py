@@ -304,3 +304,26 @@ class NotificationResponse(BaseModel):
     is_read: bool
     created_at: str
     model_config = ConfigDict(from_attributes=True)
+
+
+# User registration schemas
+class UserRegister(BaseModel):
+    username: str
+    email: str
+    password: str
+    model_config = ConfigDict(from_attributes=True)
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password_length(cls, v):
+        if len(v) > 72:
+            raise ValueError('Password cannot exceed 72 characters for bcrypt compatibility')
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters')
+        return v
+
+
+class UserRegisterResponse(BaseModel):
+    status: str
+    message: str
+    model_config = ConfigDict(from_attributes=True)

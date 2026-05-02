@@ -359,3 +359,83 @@ def test_search_empty_query(client):
     """Test search with empty query."""
     response = client.get("/api/search?q=")
     assert response.status_code in [200, 400, 422]
+
+
+# ==================== Auth Integration Tests ====================
+def test_auth_register_user(client):
+    """Test user registration."""
+    import random
+    unique_id = random.randint(10000, 99999)
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": f"testuser{unique_id}",
+            "email": f"test{unique_id}@example.com",
+            "password": "testpass123"
+        }
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "user" in data or "message" in data
+
+
+def test_auth_register_duplicate_username(client):
+    """Test registration with duplicate username."""
+    import random
+    unique_id = random.randint(10000, 99999)
+    username = f"duplicateuser{unique_id}"
+    # First registration
+    client.post(
+        "/api/auth/register",
+        json={
+            "username": username,
+            "email": f"dup1{unique_id}@example.com",
+            "password": "testpass123"
+        }
+    )
+    # Second registration with same username
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": username,
+            "email": f"dup2{unique_id}@example.com",
+            "password": "testpass456"
+        }
+    )
+    assert response.status_code == 400
+
+
+def test_auth_register_duplicate_email(client):
+    """Test registration with duplicate email."""
+    import random
+    unique_id = random.randint(10000, 99999)
+    email = f"same{unique_id}@email.com"
+    # First registration
+    client.post(
+        "/api/auth/register",
+        json={
+            "username": f"user1{unique_id}",
+            "email": email,
+            "password": "testpass123"
+        }
+    )
+    # Second registration with same email
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": f"user2{unique_id}",
+            "email": email,
+            "password": "testpass456"
+        }
+    )
+    assert response.status_code == 400
+
+
+def test_auth_register_validation(client):
+    """Test registration validation - empty fields."""
+    response = client.post(
+        "/api/auth/register",
+        json={"username": "", "email": "", "password": ""}
+    )
+    assert response.status_code in [400, 422]

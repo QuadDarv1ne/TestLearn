@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.db.models import AdminUser, User
-from app.schemas import AdminLogin
+from app.schemas import AdminLogin, UserRegister, UserRegisterResponse
 from app.security import hash_password, verify_password, create_admin_session, \
     verify_admin_session, delete_admin_session
-from datetime import datetime
+from datetime import datetime, UTC
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
@@ -26,12 +26,12 @@ async def forgot_password_page(request: Request):
     return templates.TemplateResponse("forgot-password.html", {"request": request})
 
 
-@router.post("/register")
-def register_user(username: str, email: str, password: str, db: Session = Depends(get_db)):
+@router.post("/register", response_model=UserRegisterResponse)
+def register_user(register_data: UserRegister, db: Session = Depends(get_db)):
     """Регистрация нового пользователя."""
     # Check if user already exists
     existing_user = db.query(User).filter(
-        (User.username == username) | (User.email == email)
+        (User.username == register_data.username) | (User.email == register_data.email)
     ).first()
 
     if existing_user:
@@ -39,10 +39,10 @@ def register_user(username: str, email: str, password: str, db: Session = Depend
 
     # Create new user
     user = User(
-        username=username,
-        email=email,
-        password_hash=hash_password(password),
-        created_at=datetime.utcnow()
+        username=register_data.username,
+        email=register_data.email,
+        password_hash=hash_password(register_data.password[:72]),
+        created_at=datetime.now(UTC)
     )
 
     db.add(user)
@@ -103,7 +103,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
 
-    admin = db.query(AdminUser).filter(AdminUser.username == username).first()
+    admin = db.query(AdminUser).filter(AdminUser.username == register_data.username).first()
     if not admin:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -130,7 +130,7 @@ def change_password(
     if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
 
-    admin = db.query(AdminUser).filter(AdminUser.username == username).first()
+    admin = db.query(AdminUser).filter(AdminUser.username == register_data.username).first()
     if not verify_password(old_password, admin.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 
