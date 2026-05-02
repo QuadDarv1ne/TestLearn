@@ -1,7 +1,7 @@
 ﻿# TODO.md — TestLearn: Образовательная платформа по тестированию ПО
 
 ## Обзор проекта
-- **Версия**: 2.3.6
+- **Версия**: 2.3.10
 - **Фреймворк**: FastAPI 0.118.0 + SQLAlchemy 2.0 + SQLite
 - **Цель**: Курсовой проект по дисциплине "Базы данных" (МФЮА)
 - **Лицензия**: MIT
@@ -115,7 +115,7 @@
 
 | Метрика | Значение |
 |---------|----------|
-| Версия | 2.3.6 |
+| Версия | 2.3.10 |
 | Тесты | 90/90 (100%) |
 | Ветка dev | ✅ Создана |
 | Готовность к демо | ✅ Да |
@@ -148,39 +148,39 @@ git push origin main
 ### Текущая структура
 ```
 app/
-├── routers/              # API endpoints (модульная структура)
+├── routers/          # API endpoints (модульная структура)
 │   ├── __init__.py
 │   ├── auth.py
 │   ├── categories.py
 │   ├── feedback.py
-│   ├── gamification.py   # Обновлён с пагинацией
+│   ├── gamification.py    # Обновлён с пагинацией
 │   ├── glossary.py
 │   ├── health.py
 │   ├── pages.py
 │   ├── progress.py
 │   ├── quizzes.py
 │   ├── search.py
-│   ├── social.py         # Обновлён с пагинацией
+│   ├── social.py          # Обновлён с пагинацией
 │   └── topics.py
-├── db/                   # SQLAlchemy models, database setup
+├── db/             # SQLAlchemy models, database setup
 │   ├── __init__.py
 │   ├── database.py
 │   └── models.py
-├── middleware/           # Middleware
+├── middleware/     # Middleware
 │   ├── rate_limit.py
-│   └── csrf.py          # Новый CSRF middleware
-├── utils/               # Cache, helpers
+│   └── csrf.py            # Новый CSRF middleware
+├── utils/          # Cache, helpers
 │   └── cache.py
-├── config/              # Конфигурация
-├── services/            # Модульные сервисы
+├── config/         # Конфигурация
+├── services/       # Модульные сервисы
 │   ├── __init__.py
 │   ├── gamification_service.py  # Обновлён с пагинацией
 │   ├── progress_service.py
 │   ├── quiz_checker_service.py
 │   ├── search_service.py
 │   └── social_service.py        # Обновлён с пагинацией
-├── security.py          # Password hashing, sessions
-└── schemas.py           # Pydantic models (обновлён с валидацией)
+├── security.py     # Password hashing, sessions
+└── schemas.py      # Pydantic models (обновлён с валидацией)
 ```
 
 ### Рекомендации
@@ -203,7 +203,15 @@ app/
 
 ## 📅 История версий
 
-### 2.3.9 (02.05.2026)`n- **Добавлен тест для успешного логина** admin`n- **90 тестов API** с 100% проходимостью`n`n### 2.3.8 (02.05.2026)
+### 2.3.10 (02.05.2026)
+- **Обновлена версия проекта** до 2.3.10
+- **90 тестов API** с 100% проходимостью
+
+### 2.3.9 (02.05.2026)
+- **Добавлен тест для успешного логина** admin
+- **90 тестов API** с 100% проходимостью
+
+### 2.3.8 (02.05.2026)
 - **Добавлены интеграционные тесты** для auth registration (4 новых теста)
 - **Заменён алгоритм хеширования** с bcrypt на SHA-256 с солью
 - **Исправлен deprecation warning** datetime.utcnow()
@@ -214,7 +222,7 @@ app/
 - **85 тестов API** с 100% проходимостью
 
 ### 2.3.6 (02.05.2026)
-- **Создана ветка dev** для разработки по принципу dev тЭФ main
+- **Создана ветка dev** для разработки по принципу dev → main
 - **85 тестов API** с 100% проходимостью
 
 ### 2.3.3 (01.05.2026)
