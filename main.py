@@ -130,7 +130,7 @@ app = FastAPI(
 
 # Статика и шаблоны
 app.mount("/static", StaticFiles(directory="static", html=True), name="static")
-templates = Jinja2Templates(directory="templates", auto_reload=True)
+templates = Jinja2Templates(directory="templates")
 
 # CORS middleware
 app.add_middleware(
