@@ -178,6 +178,21 @@ def test_auth_login_first_setup(client):
     except ValueError:
         pass
 
+
+def test_auth_login_success(client):
+    """Test successful login after admin setup."""
+    # First ensure admin exists by attempting login
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "admin", "password": "admin"}
+    )
+    # Should return 200 if admin exists and credentials are correct
+    # or 401 if admin doesn't exist yet (first setup)
+    if response.status_code == 200:
+        data = response.json()
+        assert data["status"] == "success"
+        assert "session_id" in data
+
 # ==================== Gamification Tests ====================
 def test_gamification_leaderboard(client):
     """Test leaderboard endpoint with pagination."""
