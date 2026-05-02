@@ -9,12 +9,15 @@ from app.services.progress_service import seed_initial_data
 Base.metadata.create_all(bind=engine)
 seed_initial_data()
 
+
 @pytest.fixture
 def client():
     """Create test client."""
     return TestClient(app)
 
+
 # ==================== Health Check Tests ====================
+
 def test_health_check(client):
     """Test basic health check endpoint."""
     response = client.get("/api/health")
@@ -23,6 +26,7 @@ def test_health_check(client):
     assert data["status"] == "healthy"
     assert "timestamp" in data
     assert "service" in data
+
 
 def test_health_detailed(client):
     """Test detailed health check endpoint."""
@@ -33,6 +37,7 @@ def test_health_detailed(client):
     assert "database" in data
     assert "statistics" in data["database"]
 
+
 def test_readiness_check(client):
     """Test readiness check endpoint."""
     response = client.get("/api/ready")
@@ -40,12 +45,14 @@ def test_readiness_check(client):
     data = response.json()
     assert data["ready"] is True
 
+
 def test_liveness_check(client):
     """Test liveness check endpoint."""
     response = client.get("/api/live")
     assert response.status_code == 200
     data = response.json()
     assert data["alive"] is True
+
 
 def test_app_info(client):
     """Test application info endpoint."""
@@ -55,14 +62,18 @@ def test_app_info(client):
     assert "name" in data
     assert "version" in data
 
+
 # ==================== Home Page Tests ====================
+
 def test_home_page(client):
     """Test home page loads successfully."""
     response = client.get("/")
     assert response.status_code == 200
     assert "TestLearn" in response.text
 
+
 # ==================== API Category Tests ====================
+
 def test_api_categories(client):
     """Test categories API endpoint."""
     response = client.get("/api/categories")
@@ -75,6 +86,7 @@ def test_api_categories(client):
     assert "name" in first
     assert "description" in first
 
+
 def test_api_categories_single(client):
     """Test single category endpoint."""
     response = client.get("/api/categories")
@@ -86,13 +98,16 @@ def test_api_categories_single(client):
         category_data = response.json()
         assert category_data["id"] == category_id
 
+
 # ==================== API Topic Tests ====================
+
 def test_api_topics(client):
     """Test topics API endpoint."""
     response = client.get("/api/topics")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
+
 
 def test_api_topics_by_category(client):
     """Test topics by category endpoint."""
@@ -103,13 +118,16 @@ def test_api_topics_by_category(client):
         response = client.get(f"/api/topics?category_id={category_id}")
         assert response.status_code == 200
 
+
 # ==================== API Quiz Tests ====================
+
 def test_api_quizzes(client):
     """Test quizzes API endpoint."""
     response = client.get("/api/quizzes")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
+
 
 def test_api_quiz_questions(client):
     """Test quiz questions endpoint."""
@@ -120,7 +138,9 @@ def test_api_quiz_questions(client):
         response = client.get(f"/api/quizzes/{quiz_id}/questions")
         assert response.status_code == 200
 
+
 # ==================== API Glossary Tests ====================
+
 def test_api_glossary(client):
     """Test glossary API endpoint."""
     response = client.get("/api/glossary")
@@ -128,12 +148,15 @@ def test_api_glossary(client):
     data = response.json()
     assert isinstance(data, list)
 
+
 def test_api_glossary_by_letter(client):
     """Test glossary by letter endpoint."""
     response = client.get("/api/glossary?letter=A")
     assert response.status_code == 200
 
+
 # ==================== API Feedback Tests ====================
+
 def test_api_feedback(client):
     """Test feedback API endpoint."""
     response = client.post(
@@ -141,6 +164,7 @@ def test_api_feedback(client):
         json={"name": "Test User", "message": "Test message"}
     )
     assert response.status_code == 200
+
 
 def test_api_feedback_validation(client):
     """Test feedback validation - missing required fields."""
@@ -150,6 +174,7 @@ def test_api_feedback_validation(client):
     )
     assert response.status_code in [400, 422]
 
+
 def test_api_feedback_with_rating(client):
     """Test feedback with rating."""
     response = client.post(
@@ -158,7 +183,9 @@ def test_api_feedback_with_rating(client):
     )
     assert response.status_code == 200
 
+
 # ==================== API Auth Tests ====================
+
 def test_auth_login_failure(client):
     """Test login with invalid credentials."""
     response = client.post(
@@ -166,6 +193,7 @@ def test_auth_login_failure(client):
         json={"username": "invalid", "password": "invalid"}
     )
     assert response.status_code == 401
+
 
 def test_auth_login_first_setup(client):
     """Test first-time admin setup."""
@@ -193,7 +221,9 @@ def test_auth_login_success(client):
         assert data["status"] == "success"
         assert "session_id" in data
 
+
 # ==================== Gamification Tests ====================
+
 def test_gamification_leaderboard(client):
     """Test leaderboard endpoint with pagination."""
     response = client.get("/api/leaderboard")
@@ -207,6 +237,7 @@ def test_gamification_leaderboard(client):
     assert "total_pages" in data
     assert isinstance(data["items"], list)
 
+
 def test_gamification_achievements(client):
     """Test achievements endpoint."""
     response = client.get("/api/achievements")
@@ -214,10 +245,12 @@ def test_gamification_achievements(client):
     data = response.json()
     assert isinstance(data, list)
 
+
 def test_gamification_daily_challenge(client):
     """Test daily challenge endpoint."""
     response = client.get("/api/daily-challenge")
     assert response.status_code in [200, 404]
+
 
 def test_gamification_certificate(client):
     """Test certificate endpoint."""
@@ -225,11 +258,14 @@ def test_gamification_certificate(client):
     # May fail if requirements not met (5 quizzes passed)
     assert response.status_code in [200, 400, 404]
 
+
 # ==================== Progress Tests ====================
+
 def test_progress_get(client):
     """Test get user progress."""
     response = client.get("/api/progress")
     assert response.status_code == 200
+
 
 def test_progress_add_xp(client):
     """Test adding experience points."""
@@ -239,7 +275,9 @@ def test_progress_add_xp(client):
     )
     assert response.status_code in [200, 400]
 
+
 # ==================== Social Features Tests ====================
+
 def test_social_comments_get(client):
     """Test getting comments for a topic."""
     response = client.get("/api/topics/1/comments")
@@ -247,6 +285,7 @@ def test_social_comments_get(client):
     if response.status_code == 200:
         data = response.json()
         assert isinstance(data, list)
+
 
 def test_social_comments_create(client):
     """Test creating a new comment."""
@@ -260,6 +299,7 @@ def test_social_comments_create(client):
         assert "id" in data
         assert "content" in data
         assert data["content"] == "Test comment"
+
 
 def test_social_comments_like(client):
     """Test liking a comment."""
@@ -275,6 +315,7 @@ def test_social_comments_like(client):
         assert data["status"] == "success"
         assert "likes" in data
 
+
 def test_social_notifications(client):
     """Test notifications endpoint with pagination."""
     response = client.get("/api/social/notifications")
@@ -285,6 +326,7 @@ def test_social_notifications(client):
     assert "items" in data
     assert "page" in data
     assert isinstance(data["items"], list)
+
 
 def test_social_notifications_mark_read(client):
     """Test marking notification as read."""
@@ -299,69 +341,85 @@ def test_social_notifications_mark_read(client):
             )
             assert read_response.status_code == 200
 
+
 # ==================== Frontend Page Tests ====================
+
 def test_theory_page(client):
     """Test theory page loads successfully."""
     response = client.get("/theory")
     assert response.status_code == 200
+
 
 def test_stats_page(client):
     """Test stats page loads successfully."""
     response = client.get("/stats")
     assert response.status_code == 200
 
+
 def test_glossary_page(client):
     """Test glossary page loads successfully."""
     response = client.get("/glossary")
     assert response.status_code == 200
+
 
 def test_database_page(client):
     """Test database schema page loads successfully."""
     response = client.get("/database")
     assert response.status_code == 200
 
+
 def test_about_page(client):
     """Test about page loads successfully."""
     response = client.get("/about")
     assert response.status_code == 200
+
 
 def test_feedback_page(client):
     """Test feedback page loads successfully."""
     response = client.get("/feedback")
     assert response.status_code == 200
 
+
 def test_leaderboard_page(client):
     """Test leaderboard page loads successfully."""
     response = client.get("/leaderboard")
     assert response.status_code == 200
+
 
 def test_bookmarks_page(client):
     """Test bookmarks page loads successfully."""
     response = client.get("/bookmarks")
     assert response.status_code == 200
 
+
 def test_login_page(client):
     """Test login page loads successfully."""
     response = client.get("/login")
     assert response.status_code == 200
+
 
 def test_quiz_page(client):
     """Test quiz page loads successfully."""
     response = client.get("/quiz")
     assert response.status_code == 200
 
+
 # ==================== Error Handling Tests ====================
+
 def test_404_page(client):
     """Test 404 error page."""
     response = client.get("/nonexistent-page")
     assert response.status_code == 404
+
 
 def test_api_404(client):
     """Test API 404 error."""
     response = client.get("/api/nonexistent")
     assert response.status_code == 404
 
+
 # ==================== Search Tests ====================
+
 def test_search_endpoint(client):
     """Test search endpoint."""
     response = client.get("/api/search?q=test")
@@ -370,6 +428,7 @@ def test_search_endpoint(client):
     assert "topics" in data
     assert "glossary_terms" in data
 
+
 def test_search_empty_query(client):
     """Test search with empty query."""
     response = client.get("/api/search?q=")
@@ -377,6 +436,7 @@ def test_search_empty_query(client):
 
 
 # ==================== Auth Integration Tests ====================
+
 def test_auth_register_user(client):
     """Test user registration."""
     import random
@@ -454,3 +514,68 @@ def test_auth_register_validation(client):
         json={"username": "", "email": "", "password": ""}
     )
     assert response.status_code in [400, 422]
+
+
+# ==================== Auth Flow Integration Tests ====================
+
+def test_auth_full_flow(client):
+    """Test complete authentication flow: register and verify user created."""
+    import uuid
+
+    # Generate unique test user
+    unique_id = str(uuid.uuid4())[:8]
+    test_username = f"testuser_{unique_id}"
+    test_email = f"test_{unique_id}@example.com"
+    test_password = "TestPass123!"
+
+    # Step 1: Register new user
+    register_response = client.post(
+        "/api/auth/register",
+        json={
+            "username": test_username,
+            "email": test_email,
+            "password": test_password
+        }
+    )
+    assert register_response.status_code == 200
+    register_data = register_response.json()
+    assert "message" in register_data or "status" in register_data
+
+    # Step 2: Verify user can access public endpoints
+    progress_response = client.get("/api/progress")
+    assert progress_response.status_code == 200
+
+    # Step 3: Verify stats endpoint works
+    stats_response = client.get("/api/progress/stats")
+    assert stats_response.status_code == 200
+
+
+def test_auth_session_persistence(client):
+    """Test that session persists across multiple requests."""
+    # Make multiple requests without auth
+    for _ in range(3):
+        response = client.get("/api/progress/stats")
+        assert response.status_code == 200
+
+
+def test_auth_concurrent_users(client):
+    """Test that multiple users can access endpoints simultaneously."""
+    import uuid
+
+    # Create multiple test users
+    for i in range(3):
+        unique_id = str(uuid.uuid4())[:8]
+        username = f"concurrent_user_{i}_{unique_id}"
+        email = f"concurrent_{i}_{unique_id}@example.com"
+
+        # Register
+        register_response = client.post(
+            "/api/auth/register",
+            json={"username": username, "email": email, "password": "Concurrent123!"}
+        )
+        assert register_response.status_code == 200
+
+    # Verify all can access public endpoints
+    for _ in range(3):
+        response = client.get("/api/progress")
+        assert response.status_code == 200

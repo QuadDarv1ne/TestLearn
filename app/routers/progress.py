@@ -1,6 +1,4 @@
-"""
-User Progress API router
-"""
+"""User Progress API router"""
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, UTC
@@ -11,6 +9,7 @@ from typing import List
 from app.db.database import get_db
 from app.db.models import UserProgress, ReadTopic, Bookmark, QuizResult
 from app.schemas import UserProgressResponse
+from app.utils.cache import cache
 
 # PDF generation
 from reportlab.lib import colors
@@ -27,13 +26,11 @@ def add_experience(amount: int = 10, session_id: str = None, request: Request = 
     # Get session_id from parameter or request cookie
     if not session_id and request:
         session_id = request.cookies.get("session_id")
-
     if not session_id:
         session_id = str(uuid.uuid4())
 
     # Get or create user progress
     progress = db.query(UserProgress).filter(UserProgress.session_id == session_id).first()
-
     if not progress:
         progress = UserProgress(
             id=str(uuid.uuid4()),
@@ -75,12 +72,8 @@ def add_experience(amount: int = 10, session_id: str = None, request: Request = 
 def get_user_progress(request: Request, db: Session = Depends(get_db)):
     """Get current user's progress."""
     session_id = request.cookies.get("session_id")
-
     if not session_id:
         # Create a new session if none exists
-        import uuid
-        from datetime import datetime, UTC
-
         session_id = str(uuid.uuid4())
         progress = UserProgress(
             id=str(uuid.uuid4()),
@@ -95,12 +88,8 @@ def get_user_progress(request: Request, db: Session = Depends(get_db)):
         db.refresh(progress)
 
     progress = db.query(UserProgress).filter(UserProgress.session_id == session_id).first()
-
     if not progress:
         # Create new progress record
-        import uuid
-        from datetime import datetime, UTC
-
         progress = UserProgress(
             id=str(uuid.uuid4()),
             session_id=session_id,
@@ -118,7 +107,6 @@ def get_user_progress(request: Request, db: Session = Depends(get_db)):
     level = 1
     xp_required = 100
     total_xp = experience
-
     while total_xp >= xp_required:
         total_xp -= xp_required
         level += 1
@@ -140,19 +128,14 @@ def get_user_progress(request: Request, db: Session = Depends(get_db)):
 def mark_topic_read(topic_id: int, request: Request, db: Session = Depends(get_db)):
     """Mark a topic as read for the current user."""
     session_id = request.cookies.get("session_id")
-
     if not session_id:
-        import uuid
         session_id = str(uuid.uuid4())
-
-    from datetime import datetime, UTC
 
     # Check if already marked
     existing = db.query(ReadTopic).filter(
         ReadTopic.session_id == session_id,
         ReadTopic.topic_id == topic_id
     ).first()
-
     if not existing:
         read_topic = ReadTopic(
             session_id=session_id,
@@ -167,7 +150,6 @@ def mark_topic_read(topic_id: int, request: Request, db: Session = Depends(get_d
             progress.topics_read += 1
             progress.last_visit = datetime.now(UTC)
         else:
-            import uuid
             progress = UserProgress(
                 id=str(uuid.uuid4()),
                 session_id=session_id,
@@ -187,19 +169,16 @@ def mark_topic_read(topic_id: int, request: Request, db: Session = Depends(get_d
 def get_bookmarks(request: Request, db: Session = Depends(get_db)):
     """Get user's bookmarks."""
     session_id = request.cookies.get("session_id")
-
     if not session_id:
         return []
 
     bookmarks = db.query(Bookmark).filter(Bookmark.session_id == session_id).all()
-
     result = []
     for bm in bookmarks:
         result.append({
             "topic_id": bm.topic_id,
             "bookmarked_at": bm.bookmarked_at.isoformat() if bm.bookmarked_at else None
         })
-
     return result
 
 
@@ -207,19 +186,14 @@ def get_bookmarks(request: Request, db: Session = Depends(get_db)):
 def add_bookmark(topic_id: int, request: Request, db: Session = Depends(get_db)):
     """Add a bookmark for a topic."""
     session_id = request.cookies.get("session_id")
-
     if not session_id:
-        import uuid
         session_id = str(uuid.uuid4())
-
-    from datetime import datetime, UTC
 
     # Check if already bookmarked
     existing = db.query(Bookmark).filter(
         Bookmark.session_id == session_id,
         Bookmark.topic_id == topic_id
     ).first()
-
     if not existing:
         bookmark = Bookmark(
             session_id=session_id,
@@ -236,17 +210,15 @@ def add_bookmark(topic_id: int, request: Request, db: Session = Depends(get_db))
 def remove_bookmark(topic_id: int, request: Request, db: Session = Depends(get_db)):
     """Remove a bookmark for a topic."""
     session_id = request.cookies.get("session_id")
-
     if session_id:
         bookmark = db.query(Bookmark).filter(
             Bookmark.session_id == session_id,
             Bookmark.topic_id == topic_id
         ).first()
-
         if bookmark:
             db.delete(bookmark)
             db.commit()
-
+            return {"status": "success"}
     return {"status": "success"}
 
 
@@ -255,6 +227,12 @@ def get_progress_stats(request: Request, db: Session = Depends(get_db)):
     """Get user progress statistics including unlocked achievements and daily challenge."""
     session_id = request.cookies.get("session_id", "anonymous")
 
+    # Try to get from cache (30 seconds TTL)
+    cache_key = f"progress_stats:{session_id}"
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return cached_data
+
     # Get user progress
     progress = db.query(UserProgress).filter(
         UserProgress.session_id == session_id
@@ -262,7 +240,7 @@ def get_progress_stats(request: Request, db: Session = Depends(get_db)):
 
     if not progress:
         # Return default stats for new user
-        return {
+        result = {
             "user_progress": {
                 "topics_read": 0,
                 "quizzes_passed": 0,
@@ -273,13 +251,14 @@ def get_progress_stats(request: Request, db: Session = Depends(get_db)):
             "unlocked_achievements": [],
             "daily_challenge": None
         }
+        cache.set(cache_key, result, ttl=30)
+        return result
 
     # Calculate level and experience
     experience = progress.total_score
     level = 1
     xp_required = 100
     total_xp = experience
-
     while total_xp >= xp_required:
         total_xp -= xp_required
         level += 1
@@ -287,56 +266,18 @@ def get_progress_stats(request: Request, db: Session = Depends(get_db)):
 
     # Get unlocked achievements
     achievements = [
-        {
-            "id": 1,
-            "name": "Первые шаги",
-            "description": "Прочитать первую тему",
-            "icon": "📚",
-            "unlocked": progress.topics_read >= 1
-        },
-        {
-            "id": 2,
-            "name": "Любопытный",
-            "description": "Прочитать 5 тем",
-            "icon": "🔍",
-            "unlocked": progress.topics_read >= 5
-        },
-        {
-            "id": 3,
-            "name": "Эрудит",
-            "description": "Прочитать 10 тем",
-            "icon": "🎓",
-            "unlocked": progress.topics_read >= 10
-        },
-        {
-            "id": 4,
-            "name": "Новичок в тестировании",
-            "description": "Пройти первый тест",
-            "icon": "✅",
-            "unlocked": progress.quizzes_passed >= 1
-        },
-        {
-            "id": 5,
-            "name": "Опытный тестировщик",
-            "description": "Пройти 5 тестов",
-            "icon": "🏆",
-            "unlocked": progress.quizzes_passed >= 5
-        },
-        {
-            "id": 6,
-            "name": "Мастер тестирования",
-            "description": "Набрать 100+ баллов",
-            "icon": "👑",
-            "unlocked": progress.total_score >= 100
-        }
+        {"id": 1, "name": "Первые шаги", "description": "Прочитать первую тему", "icon": "📚", "unlocked": progress.topics_read >= 1},
+        {"id": 2, "name": "Любопытный", "description": "Прочитать 5 тем", "icon": "🔍", "unlocked": progress.topics_read >= 5},
+        {"id": 3, "name": "Эрудит", "description": "Прочитать 10 тем", "icon": "🎓", "unlocked": progress.topics_read >= 10},
+        {"id": 4, "name": "Новичок в тестировании", "description": "Пройти первый тест", "icon": "✅", "unlocked": progress.quizzes_passed >= 1},
+        {"id": 5, "name": "Опытный тестировщик", "description": "Пройти 5 тестов", "icon": "🏆", "unlocked": progress.quizzes_passed >= 5},
+        {"id": 6, "name": "Мастер тестирования", "description": "Набрать 100+ баллов", "icon": "👑", "unlocked": progress.total_score >= 100}
     ]
-
     unlocked_achievements = [a for a in achievements if a["unlocked"]]
 
     # Get daily challenge
     from sqlalchemy import func
     quiz = db.query(QuizResult).order_by(func.random()).first()
-
     daily_challenge = None
     if quiz:
         expires = datetime.now(UTC).replace(hour=23, minute=59, second=59)
@@ -350,7 +291,7 @@ def get_progress_stats(request: Request, db: Session = Depends(get_db)):
             "expires_at": expires.isoformat()
         }
 
-    return {
+    result = {
         "user_progress": {
             "topics_read": progress.topics_read,
             "quizzes_passed": progress.quizzes_passed,
@@ -361,6 +302,10 @@ def get_progress_stats(request: Request, db: Session = Depends(get_db)):
         "unlocked_achievements": unlocked_achievements,
         "daily_challenge": daily_challenge
     }
+
+    # Cache the result for 30 seconds
+    cache.set(cache_key, result, ttl=30)
+    return result
 
 
 @router.get("/stats/export/pdf")
@@ -390,7 +335,6 @@ def export_progress_pdf(request: Request, db: Session = Depends(get_db)):
         level = 1
         xp_required = 100
         total_xp = experience
-
         while total_xp >= xp_required:
             total_xp -= xp_required
             level += 1
@@ -453,7 +397,6 @@ def export_progress_pdf(request: Request, db: Session = Depends(get_db)):
         ["Опыт (XP)", str(progress_data["experience"])],
         ["Разблокировано достижений", f"{unlocked_count}/6"]
     ]
-
     progress_table = Table(progress_data_list, colWidths=[200, 100])
     progress_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -481,7 +424,6 @@ def export_progress_pdf(request: Request, db: Session = Depends(get_db)):
                 f"{percentage:.1f}%",
                 result.completed_at.strftime("%d.%m.%Y") if result.completed_at else "Не указано"
             ])
-
         quiz_table = Table(quiz_data, colWidths=[100, 60, 60, 60, 80])
         quiz_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
