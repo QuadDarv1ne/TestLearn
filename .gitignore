@@ -1,52 +1,108 @@
-```
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
-venv/
-.venv/
-.ENV
-.ENV.local
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 .env
-.env.local
-.env.*
-.env.local.*
-.venv/
+.venv
+env/
 venv/
 ENV/
 env.bak/
+venv.bak/
 .venv.bak/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pycharm/
 
 # Database
 *.db
 *.db-journal
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
 
 # Logs
 *.log
+logs/
 
-# Coverage
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# Coverage & Testing
 .coverage
 coverage/
 htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+pytest_debug.log
 .coverage.*
 
-# Pytest
-.pytest_cache/
-pytest_debug.log
-
-# MyPy
+# Type checking
 .mypy_cache/
+.pyright/
 
-# Build directories
+# Ruff
+.ruff_cache/
+
+# Build artifacts
 build/
 dist/
-*.egg
-*.egg-info/
+*.spec
+*.pyz
 
-# Data and logs directories
+# OS
+.DS_Store
+Thumbs.db
+*.orig
+
+# Docker
+docker-compose.override.yml
+
+# Data and temporary
 data/
-logs/
-```
+temp/
+tmp/
+*.tmp
+
+# PID files
+*.pid
+
+# Secrets
+*.key
+*.pem
+*.crt
+secrets/

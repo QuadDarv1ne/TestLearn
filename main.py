@@ -2,20 +2,21 @@
 FastAPI приложение: Учебная платформа по основам тестирования программного обеспечения
 
 Улучшенная версия с модульной архитектурой, SQLAlchemy и безопасной аутентификацией
+Версия: 2.3.15
 
-Версия: 2.2.0
-Описание: Образовательная платформа для изучения основ тестирования ПО с геймификацией
-          и социальными функциями.
+Описание:
+Образовательная платформа для изучения основ тестирования ПО с геймификацией и социальными функциями.
 
 API Documentation:
-    - Swagger UI: /api/docs
-    - ReDoc: /api/redoc
-    - OpenAPI: /api/openapi.json
+- Swagger UI: /api/docs
+- ReDoc: /api/redoc
+- OpenAPI: /api/openapi.json
 
 Автор: Самойлов Д.А.
 Организация: Московский областной филиал МФЮА
 """
 
+import os
 import logging
 from contextlib import asynccontextmanager
 
@@ -32,7 +33,11 @@ load_dotenv()
 
 # Импорт роутеров
 from app.db.database import Base, engine
-from app.middleware.rate_limit import _rate_limit_exceeded_handler, configure_rate_limiting, limiter
+from app.middleware.rate_limit import (
+    _rate_limit_exceeded_handler,
+    configure_rate_limiting,
+    limiter,
+)
 from app.routers import (
     auth,
     categories,
@@ -50,10 +55,12 @@ from app.routers import (
 from app.services import LeaderboardService
 from app.utils.cache import cache
 
-# Настройка логгирования
+# Настройка логирования
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=getattr(logging, log_level, logging.INFO),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -67,6 +74,7 @@ async def lifespan(app: FastAPI):
     # Заполнение начальными данными
     try:
         from app.services.progress_service import seed_initial_data
+
         seed_initial_data()
         logger.info("Database initialized successfully")
     except Exception as e:
@@ -118,7 +126,7 @@ app = FastAPI(
 - **Поиск**: 30 запросов в минуту
 - **Обратная связь**: 20 запросов в минуту
     """,
-    version="2.3.14",
+    version="2.3.15",
     contact={
         "name": "Самойлов Д.А.",
         "email": "samoilov@example.com",
@@ -131,7 +139,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json"
+    openapi_url="/api/openapi.json",
 )
 
 # Статика и шаблоны
@@ -157,7 +165,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
-# Подключение роутеров с rate limiting
+# Тестовый endpoint с rate limiting
 @app.get("/api/test", tags=["System"])
 @limiter.limit("10/minute")
 async def test_rate_limit(request: Request):
@@ -165,6 +173,7 @@ async def test_rate_limit(request: Request):
     return {"message": "Rate limiting is working"}
 
 
+# Подключение роутеров
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(categories.router, prefix="/api/categories", tags=["Categories"])
 app.include_router(topics.router, prefix="/api/topics", tags=["Topics"])
@@ -178,6 +187,7 @@ app.include_router(health.router, prefix="/api", tags=["System"])
 app.include_router(search.router, prefix="/api", tags=["Search"])
 app.include_router(pages.router, tags=["Pages"])
 
+
 # Обработчики глобальных ошибок
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -185,7 +195,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     logger.warning(f"HTTP exception: {exc.status_code} - {exc.detail}")
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail, "status": exc.status_code}
+        content={"detail": exc.detail, "status": exc.status_code},
     )
 
 
@@ -195,7 +205,7 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
     logger.error(f"Database error: {str(exc)}")
     return JSONResponse(
         status_code=500,
-        content={"detail": "Database error occurred", "status": 500}
+        content={"detail": "Database error occurred", "status": 500},
     )
 
 
@@ -205,7 +215,7 @@ async def general_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unexpected error: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error", "status": 500}
+        content={"detail": "Internal server error", "status": 500},
     )
 
 
@@ -213,7 +223,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 @app.get("/theory", include_in_schema=False)
 async def theory_page(request: Request):
     """Теория раздел."""
-    from sqlalchemy.orm import Session, joinedload
+    from sqlalchemy.orm import Session
 
     from app.db.database import get_db
     from app.db.models import Category, Topic
@@ -242,18 +252,26 @@ async def theory_page(request: Request):
 
         # Get query parameters
         query_params = dict(request.query_params)
-        active_category_id = int(query_params.get("category_id", 0)) if query_params.get("category_id") else None
+        active_category_id = (
+            int(query_params.get("category_id", 0))
+            if query_params.get("category_id")
+            else None
+        )
         search_query = query_params.get("search", "")
 
-        return templates.TemplateResponse(request, "theory.html", {
-            "categories": categories,
-            "topics_by_category": topics_by_category,
-            "all_topic_titles": all_topic_titles,
-            "topics_read": topics_read,
-            "total_topics": total_topics,
-            "active_category_id": active_category_id,
-            "search_query": search_query
-        })
+        return templates.TemplateResponse(
+            request,
+            "theory.html",
+            {
+                "categories": categories,
+                "topics_by_category": topics_by_category,
+                "all_topic_titles": all_topic_titles,
+                "topics_read": topics_read,
+                "total_topics": total_topics,
+                "active_category_id": active_category_id,
+                "search_query": search_query,
+            },
+        )
     finally:
         db.close()
 
@@ -263,7 +281,7 @@ async def topic_page(request: Request, topic_id: int):
     """Страница отдельной темы."""
     from datetime import datetime
 
-    from sqlalchemy.orm import Session, joinedload
+    from sqlalchemy.orm import Session
 
     from app.db.database import get_db
     from app.db.models import ReadTopic, Topic, User
@@ -271,10 +289,11 @@ async def topic_page(request: Request, topic_id: int):
     db: Session = next(get_db())
     try:
         # Get topic with category
-        topic = db.query(Topic).options(
-            joinedload(Topic.category)
-        ).filter(Topic.id == topic_id).one_or_none()
-
+        topic = (
+            db.query(Topic)
+            .filter(Topic.id == topic_id)
+            .one_or_none()
+        )
         if not topic:
             raise HTTPException(status_code=404, detail="Тема не найдена")
 
@@ -282,17 +301,22 @@ async def topic_page(request: Request, topic_id: int):
         session_id = request.cookies.get("session_id", "anonymous")
 
         # Check if user has read this topic
-        is_read = db.query(ReadTopic).filter(
-            ReadTopic.topic_id == topic_id,
-            ReadTopic.session_id == session_id
-        ).first() is not None
+        is_read = (
+            db.query(ReadTopic)
+            .filter(
+                ReadTopic.topic_id == topic_id,
+                ReadTopic.session_id == session_id,
+            )
+            .first()
+            is not None
+        )
 
         # Mark as read if not already read
         if not is_read and session_id != "anonymous":
             read_topic = ReadTopic(
                 topic_id=topic_id,
                 session_id=session_id,
-                read_at=datetime.utcnow()
+                read_at=datetime.utcnow(),
             )
             db.add(read_topic)
 
@@ -302,28 +326,44 @@ async def topic_page(request: Request, topic_id: int):
                 user.progress.topics_read += 1
                 # Add XP for reading topic
                 from app.services.gamification_service import GamificationService
+
                 GamificationService.add_xp(user, 10, db)
+
             db.commit()
 
         # Get next topic for navigation
-        next_topic = db.query(Topic).filter(
-            Topic.order_num > topic.order_num,
-            Topic.category_id == topic.category_id
-        ).order_by(Topic.order_num).first()
+        next_topic = (
+            db.query(Topic)
+            .filter(
+                Topic.order_num > topic.order_num,
+                Topic.category_id == topic.category_id,
+            )
+            .order_by(Topic.order_num)
+            .first()
+        )
 
         # Get previous topic
-        prev_topic = db.query(Topic).filter(
-            Topic.order_num < topic.order_num,
-            Topic.category_id == topic.category_id
-        ).order_by(Topic.order_num.desc()).first()
+        prev_topic = (
+            db.query(Topic)
+            .filter(
+                Topic.order_num < topic.order_num,
+                Topic.category_id == topic.category_id,
+            )
+            .order_by(Topic.order_num.desc())
+            .first()
+        )
 
-        return templates.TemplateResponse(request, "topic.html", {
-            "topic": topic,
-            "category": topic.category,
-            "is_read": is_read,
-            "next_topic": next_topic,
-            "prev_topic": prev_topic
-        })
+        return templates.TemplateResponse(
+            request,
+            "topic.html",
+            {
+                "topic": topic,
+                "category": topic.category,
+                "is_read": is_read,
+                "next_topic": next_topic,
+                "prev_topic": prev_topic,
+            },
+        )
     finally:
         db.close()
 
@@ -331,7 +371,7 @@ async def topic_page(request: Request, topic_id: int):
 @app.get("/quiz", include_in_schema=False)
 async def quiz_page(request: Request):
     """Тесты раздел."""
-    from sqlalchemy.orm import Session, joinedload
+    from sqlalchemy.orm import Session
 
     from app.db.database import get_db
     from app.db.models import Question, Quiz
@@ -340,34 +380,48 @@ async def quiz_page(request: Request):
     try:
         # Get the first quiz available (or create a default one if none)
         quiz = db.query(Quiz).first()
-
         if not quiz:
             # If no quiz exists, we'll create a placeholder for demonstration
             # In a real app, you might redirect to a create quiz page or show a message
-            quiz = Quiz(id=0, title="Доступные тесты", description="Пока нет доступных тестов")
+            quiz = Quiz(
+                id=0,
+                title="Доступные тесты",
+                description="Пока нет доступных тестов",
+            )
             questions = []
         else:
             # Get questions for this quiz
-            questions = db.query(Question).filter(Question.quiz_id == quiz.id).order_by(Question.order_num).all()
-
+            questions = (
+                db.query(Question)
+                .filter(Question.quiz_id == quiz.id)
+                .order_by(Question.order_num)
+                .all()
+            )
             # Convert to list of dicts for template
-            questions = [{
-                "id": q.id,
-                "question_text": q.question_text,
-                "option_a": q.option_a,
-                "option_b": q.option_b,
-                "option_c": q.option_c,
-                "option_d": q.option_d
-            } for q in questions]
+            questions = [
+                {
+                    "id": q.id,
+                    "question_text": q.question_text,
+                    "option_a": q.option_a,
+                    "option_b": q.option_b,
+                    "option_c": q.option_c,
+                    "option_d": q.option_d,
+                }
+                for q in questions
+            ]
 
         # Set a default time limit (15 minutes in seconds)
         time_limit = 900
 
-        return templates.TemplateResponse(request, "quiz.html", {
-            "quiz": quiz,
-            "questions": questions,
-            "time_limit": time_limit
-        })
+        return templates.TemplateResponse(
+            request,
+            "quiz.html",
+            {
+                "quiz": quiz,
+                "questions": questions,
+                "time_limit": time_limit,
+            },
+        )
     finally:
         db.close()
 
@@ -375,7 +429,7 @@ async def quiz_page(request: Request):
 @app.get("/glossary", include_in_schema=False)
 async def glossary_page(request: Request):
     """Глоссарий раздел."""
-    from sqlalchemy.orm import Session, joinedload
+    from sqlalchemy.orm import Session
 
     from app.db.database import get_db
     from app.db.models import GlossaryTerm
@@ -398,22 +452,26 @@ async def glossary_page(request: Request):
         if search_query:
             search_term = f"%{search_query}%"
             query = query.filter(
-                (GlossaryTerm.term.ilike(search_term)) |
-                (GlossaryTerm.definition.ilike(search_term))
+                (GlossaryTerm.term.ilike(search_term))
+                | (GlossaryTerm.definition.ilike(search_term))
             )
 
         # Get terms
         terms = query.order_by(GlossaryTerm.term).all()
 
         # Get all distinct letters for navigation
-        all_letters = [chr(i) for i in range(ord('A'), ord('Z')+1)]
+        all_letters = [chr(i) for i in range(ord("A"), ord("Z") + 1)]
 
-        return templates.TemplateResponse(request, "glossary.html", {
-            "terms": terms,
-            "all_letters": all_letters,
-            "active_letter": active_letter,
-            "search_query": search_query
-        })
+        return templates.TemplateResponse(
+            request,
+            "glossary.html",
+            {
+                "terms": terms,
+                "all_letters": all_letters,
+                "active_letter": active_letter,
+                "search_query": search_query,
+            },
+        )
     finally:
         db.close()
 
@@ -427,7 +485,7 @@ async def stats_page(request: Request):
         return templates.TemplateResponse(request, "stats.html", cached_stats)
 
     from sqlalchemy import func
-    from sqlalchemy.orm import Session, joinedload
+    from sqlalchemy.orm import Session
 
     from app.db.database import get_db
     from app.db.models import Category, Quiz, QuizResult, Topic, UserProgress
@@ -435,34 +493,41 @@ async def stats_page(request: Request):
     db: Session = next(get_db())
     try:
         # Get or create user progress (using a default session for simplicity)
-        session_id = 'default_session'
+        session_id = "default_session"
         progress = db.query(UserProgress).filter(UserProgress.session_id == session_id).first()
-
         if progress is None:
             # Create a temporary progress object with zeros
+
             class Progress:
                 topics_read = 0
                 quizzes_passed = 0
                 total_score = 0
+
             progress = Progress()
 
         # Get total topics
         total_topics = db.query(Topic).count()
 
         # Get categories with topic count
-        categories_with_stats = db.query(Category, func.count(Topic.id).label('topic_count'))\
-            .outerjoin(Topic, Category.id == Topic.category_id)\
-            .group_by(Category.id)\
+        categories_with_stats = (
+            db.query(Category, func.count(Topic.id).label("topic_count"))
+            .outerjoin(Topic, Category.id == Topic.category_id)
+            .group_by(Category.id)
             .all()
-
+        )
         # Convert to list of objects with name and topic_count attributes
-        categories_with_stats = [{'name': cat.Category.name, 'topic_count': cat.topic_count} for cat in categories_with_stats]
+        categories_with_stats = [
+            {"name": cat.Category.name, "topic_count": cat.topic_count}
+            for cat in categories_with_stats
+        ]
 
         # Get total quiz results
         total_results = db.query(QuizResult).count()
 
         # Get average score percentage
-        avg_score_result = db.query(func.avg(QuizResult.score * 100.0 / QuizResult.total)).scalar()
+        avg_score_result = db.query(
+            func.avg(QuizResult.score * 100.0 / QuizResult.total)
+        ).scalar()
         avg_score = round(avg_score_result) if avg_score_result is not None else 0
 
         # Get total quizzes
@@ -474,30 +539,37 @@ async def stats_page(request: Request):
         for min_score, max_score in ranges:
             count = db.query(QuizResult).filter(
                 (QuizResult.score * 100.0 / QuizResult.total) >= min_score,
-                (QuizResult.score * 100.0 / QuizResult.total) <= max_score
+                (QuizResult.score * 100.0 / QuizResult.total) <= max_score,
             ).count()
-            score_distribution.append({
-                'range_label': f'{min_score}-{max_score}%',
-                'count': count
-            })
+            score_distribution.append(
+                {
+                    "range_label": f"{min_score}-{max_score}%",
+                    "count": count,
+                }
+            )
 
         # Get top results (top 5 by score percentage)
-        top_results_query = db.query(QuizResult, Quiz.title.label('quiz_title'))\
-            .join(Quiz, QuizResult.quiz_id == Quiz.id)\
-            .order_by((QuizResult.score * 100.0 / QuizResult.total).desc())\
-            .limit(5)\
+        top_results_query = (
+            db.query(QuizResult, Quiz.title.label("quiz_title"))
+            .join(Quiz, QuizResult.quiz_id == Quiz.id)
+            .order_by((QuizResult.score * 100.0 / QuizResult.total).desc())
+            .limit(5)
             .all()
-
+        )
         top_results = []
         for result, quiz_title in top_results_query:
             percentage = int(result.score / result.total * 100) if result.total > 0 else 0
-            top_results.append({
-                'quiz_title': quiz_title,
-                'score': result.score,
-                'total': result.total,
-                'created_at': result.created_at.strftime('%Y-%m-%d') if result.created_at else '',
-                'percentage': percentage
-            })
+            top_results.append(
+                {
+                    "quiz_title": quiz_title,
+                    "score": result.score,
+                    "total": result.total,
+                    "created_at": result.created_at.strftime("%Y-%m-%d")
+                    if result.created_at
+                    else "",
+                    "percentage": percentage,
+                }
+            )
 
         # Prepare context for template
         context = {
@@ -508,7 +580,7 @@ async def stats_page(request: Request):
             "avg_score": avg_score,
             "total_quizzes": total_quizzes,
             "score_distribution": score_distribution,
-            "top_results": top_results
+            "top_results": top_results,
         }
 
         # Cache the context for 60 seconds
@@ -529,20 +601,26 @@ async def bookmarks_page(request: Request):
 async def database_page(request: Request):
     """База данных раздел."""
     from sqlalchemy import text
-    from sqlalchemy.orm import Session, joinedload
+    from sqlalchemy.orm import Session
 
     from app.db.database import get_db
 
     db: Session = next(get_db())
     try:
         # Get list of tables (excluding SQLite system tables)
-        tables_query = db.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"))
+        tables_query = db.execute(
+            text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';"
+            )
+        )
         table_names = [row[0] for row in tables_query.fetchall()]
 
         tables_info = []
         for table_name in table_names:
             # Get row count
-            count_query = db.execute(text(f'SELECT COUNT(*) as count FROM "{table_name}";'))
+            count_query = db.execute(
+                text(f'SELECT COUNT(*) as count FROM "{table_name}";')
+            )
             count = count_query.scalar() or 0
 
             # Get column info using PRAGMA
@@ -550,22 +628,30 @@ async def database_page(request: Request):
             columns = []
             for col in pragma_query.fetchall():
                 # col: (cid, name, type, notnull, dflt_value, pk)
-                columns.append({
-                    'name': col[1],
-                    'type': col[2],
-                    'pk': bool(col[5]),
-                    'notnull': bool(col[3])
-                })
+                columns.append(
+                    {
+                        "name": col[1],
+                        "type": col[2],
+                        "pk": bool(col[5]),
+                        "notnull": bool(col[3]),
+                    }
+                )
 
-            tables_info.append({
-                'name': table_name,
-                'count': count,
-                'columns': columns
-            })
+            tables_info.append(
+                {
+                    "name": table_name,
+                    "count": count,
+                    "columns": columns,
+                }
+            )
 
-        return templates.TemplateResponse(request, "database.html", {
-            "tables_info": tables_info
-        })
+        return templates.TemplateResponse(
+            request,
+            "database.html",
+            {
+                "tables_info": tables_info,
+            },
+        )
     finally:
         db.close()
 
@@ -579,9 +665,13 @@ async def leaderboard_page(request: Request):
     try:
         # Get leaderboard data from service
         leaderboard_data = LeaderboardService.get_leaderboard(limit=10, db=db)
-        return templates.TemplateResponse(request, "leaderboard.html", {
-            "leaderboard": leaderboard_data
-        })
+        return templates.TemplateResponse(
+            request,
+            "leaderboard.html",
+            {
+                "leaderboard": leaderboard_data,
+            },
+        )
     finally:
         db.close()
 
@@ -596,7 +686,7 @@ async def about_page(request: Request):
 async def feedback_page(request: Request):
     """Обратная связь раздел."""
     from sqlalchemy import func
-    from sqlalchemy.orm import Session, joinedload
+    from sqlalchemy.orm import Session
 
     from app.db.database import get_db
     from app.db.models import Feedback
@@ -608,11 +698,15 @@ async def feedback_page(request: Request):
         avg_rating_result = db.query(func.avg(Feedback.rating)).scalar()
         avg_rating = round(float(avg_rating_result), 1) if avg_rating_result else 0
 
-        return templates.TemplateResponse(request, "feedback.html", {
-            "feedback_count": feedback_count,
-            "total_feedback": feedback_count,
-            "avg_rating": avg_rating
-        })
+        return templates.TemplateResponse(
+            request,
+            "feedback.html",
+            {
+                "feedback_count": feedback_count,
+                "total_feedback": feedback_count,
+                "avg_rating": avg_rating,
+            },
+        )
     finally:
         db.close()
 
@@ -629,14 +723,13 @@ async def home(request: Request):
     from app.db.database import get_db
     from app.db.models import Category, GlossaryTerm, Question, Topic
 
-    # Получаем статистику
     db = next(get_db())
     try:
         stats = {
             "categories": db.query(Category).count(),
             "topics": db.query(Topic).count(),
             "questions": db.query(Question).count(),
-            "glossary": db.query(GlossaryTerm).count()
+            "glossary": db.query(GlossaryTerm).count(),
         }
     finally:
         db.close()
