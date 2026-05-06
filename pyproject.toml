@@ -1,6 +1,6 @@
 [project]
 name = "TestLearn"
-version = "2.3.14"
+version = "2.3.15"
 description = "Образовательная веб-платформа для изучения основ тестирования ПО"
 readme = "README.md"
 license = {text = "MIT"}
