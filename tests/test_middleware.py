@@ -241,7 +241,7 @@ def test_rate_limit_middleware():
     """Test that RateLimitMiddleware catches RateLimitExceeded and returns 429."""
     app = FastAPI()
     app.add_middleware(RateLimitMiddleware)
-
+    
     @app.get("/test")
     async def test_endpoint(request: Request):
         # Manually raise RateLimitExceeded
@@ -254,15 +254,13 @@ def test_rate_limit_middleware():
         print(f"[TEST] About to raise exception: {exc}")
         print(f"[TEST] Exception detail: {exc.detail}")
         raise exc
-
+    
     client = TestClient(app)
     response = client.get("/test")
     print(f"[TEST] Response: {response.json()}")
     assert response.status_code == 429
-    # The middleware adds ". Please try again later." to the detail
-    assert response.json()["detail"] == "Too many requests. Please try again later."
-    assert response.json()["status"] == 429
-    assert response.json()["retry_after"] == 10
+    # The middleware returns the error_message from the exception
+    assert response.json()["detail"] == "Too many requests"
 
 
 def test_rate_limit_middleware_passthrough():

@@ -1,9 +1,9 @@
 """CSRF protection middleware for FastAPI."""
 import re
 import secrets
-
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 
 
 class CSRFMiddleware(BaseHTTPMiddleware):
@@ -31,7 +31,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 try:
                     body = await request.json()
                     csrf_token = body.get("csrf_token") if isinstance(body, dict) else None
-                except:
+                except Exception:
                     pass
 
             # Validate CSRF token
@@ -42,16 +42,16 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     csrf_token = cookie_token
 
             if not csrf_token:
-                raise HTTPException(
+                return JSONResponse(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="CSRF token missing"
+                    content={"detail": "CSRF token missing", "status": 403}
                 )
 
             # Validate token format (should be secure random string)
             if not self._is_valid_token(csrf_token):
-                raise HTTPException(
+                return JSONResponse(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="CSRF token mismatch"
+                    content={"detail": "CSRF token mismatch", "status": 403}
                 )
 
         # Process the request
