@@ -40,7 +40,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             print(f"[RATE LIMIT MIDDLEWARE] exc.retry_after: {exc.retry_after}")  # DEBUG
             print(f"[RATE LIMIT MIDDLEWARE] This is the except block!")  # DEBUG
             response_content = {
-                "detail": "Fixed detail for testing",
+                "detail": "Too many requests. Please try again later.",
                 "status": 429,
                 "retry_after": exc.retry_after,
             }
