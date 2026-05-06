@@ -1,21 +1,22 @@
 """Tests for QuizCheckerService and CertificateService."""
-import pytest
 import time
-from datetime import datetime, UTC
-from app.db.models import (
-    Question, UserProgress,
-    QUESTION_TYPE_SINGLE_CHOICE,
-    QUESTION_TYPE_MULTIPLE_CHOICE,
-    QUESTION_TYPE_TRUE_FALSE,
-    QUESTION_TYPE_SHORT_ANSWER,
-    QUESTION_TYPE_MATCHING,
-    QUESTION_TYPE_ORDERING,
-    QUESTION_TYPE_FILL_BLANK
-)
-from app.models import Certificate
-from app.services.quiz_checker_service import QuizCheckerService
-from app.services.gamification_service import CertificateService, LeaderboardService
+
+import pytest
+
 from app.db.database import SessionLocal
+from app.db.models import (
+    QUESTION_TYPE_FILL_BLANK,
+    QUESTION_TYPE_MATCHING,
+    QUESTION_TYPE_MULTIPLE_CHOICE,
+    QUESTION_TYPE_ORDERING,
+    QUESTION_TYPE_SHORT_ANSWER,
+    QUESTION_TYPE_SINGLE_CHOICE,
+    QUESTION_TYPE_TRUE_FALSE,
+    Question,
+    UserProgress,
+)
+from app.services.gamification_service import CertificateService
+from app.services.quiz_checker_service import QuizCheckerService
 
 
 def get_unique_session_id():

@@ -43,9 +43,17 @@ test:
 test-coverage:
 	pytest tests/ -v --cov=app --cov-report=html --cov-report=term
 
-# Run linting (if you add a linter later)
+# Run linting
 lint:
-	@echo "Linting not configured yet"
+	ruff check .
+
+# Format code
+format:
+	ruff format .
+
+# Fix auto-fixable linting issues
+lint-fix:
+	ruff check --fix .
 
 # Build Docker image
 docker-build:

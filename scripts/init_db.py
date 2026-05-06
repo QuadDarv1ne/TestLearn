@@ -4,26 +4,23 @@ Database initialization and seeding script.
 Run this to set up the database with initial data.
 """
 
-from app.db.database import SessionLocal, Base
-from app.db.models import (
-    Category, Topic, Quiz, Question, GlossaryTerm, 
-    AchievementDefinition
-)
+from app.db.database import Base, SessionLocal
+from app.db.models import AchievementDefinition, Category, GlossaryTerm, Question, Quiz, Topic
 
 
 def init_database():
     """Initialize database tables and seed with sample data."""
-    
+
     # Create all tables
     Base.metadata.create_all(bind=SessionLocal().bind)
-    
+
     db = SessionLocal()
     try:
         # Check if data already exists
         if db.query(Category).count() > 0:
             print("Database already initialized. Skipping seed.")
             return
-        
+
         # Seed Categories
         categories = [
             Category(
@@ -53,11 +50,11 @@ def init_database():
         ]
         db.add_all(categories)
         db.commit()
-        
+
         # Seed Topics
         python_cat = db.query(Category).filter_by(slug='python-basics').first()
         web_cat = db.query(Category).filter_by(slug='web-dev').first()
-        
+
         topics = [
             Topic(category_id=python_cat.id, title='Variables and Data Types', content='Learn about strings, integers, lists, and dictionaries in Python.', order_num=1),
             Topic(category_id=python_cat.id, title='Control Flow', content='Master if statements, loops, and conditional logic.', order_num=2),
@@ -67,7 +64,7 @@ def init_database():
         ]
         db.add_all(topics)
         db.commit()
-        
+
         # Seed Quizzes
         quiz = Quiz(
             category_id=python_cat.id,
@@ -76,7 +73,7 @@ def init_database():
         )
         db.add(quiz)
         db.commit()
-        
+
         questions = [
             Question(quiz_id=quiz.id, question_text='What is the output of print(2 + 2)?', correct_option='B', option_a='2', option_b='4', option_c='22', option_d='Error'),
             Question(quiz_id=quiz.id, question_text='Which type is mutable?', correct_option='B', option_a='Tuple', option_b='List', option_c='String', option_d='Integer'),
@@ -84,7 +81,7 @@ def init_database():
         ]
         db.add_all(questions)
         db.commit()
-        
+
         # Seed Glossary Terms
         glossary_terms = [
             GlossaryTerm(term='API', definition='Application Programming Interface - allows different software applications to communicate', letter='A'),
@@ -98,7 +95,7 @@ def init_database():
         ]
         db.add_all(glossary_terms)
         db.commit()
-        
+
         # Seed Achievements
         achievements = [
             AchievementDefinition(name='First Steps', description='Complete your first quiz', icon='🎯', category='quiz', requirement_type='count', requirement_value=1, xp_reward=10),
@@ -109,14 +106,14 @@ def init_database():
         ]
         db.add_all(achievements)
         db.commit()
-        
-        print(f"✅ Database initialized successfully!")
+
+        print("✅ Database initialized successfully!")
         print(f"   - {len(categories)} categories")
         print(f"   - {len(topics)} topics")
         print(f"   - {len(questions)} quiz questions")
         print(f"   - {len(glossary_terms)} glossary terms")
         print(f"   - {len(achievements)} achievements")
-        
+
     except Exception as e:
         db.rollback()
         print(f"❌ Error initializing database: {e}")

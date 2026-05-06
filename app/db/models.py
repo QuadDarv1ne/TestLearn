@@ -1,10 +1,12 @@
 ﻿""" SQLAlchemy models for TestLearn application """
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float, JSON
-from sqlalchemy.orm import relationship
-from datetime import datetime, UTC
 import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 from app.db.database import Base
+
 
 def generate_uuid():
     return str(uuid.uuid4())
@@ -59,36 +61,36 @@ class Question(Base):
     quiz_id = Column(Integer, ForeignKey("quizzes.id"), nullable=False, index=True)
     question_text = Column(Text, nullable=False)
     question_type = Column(String, default=QUESTION_TYPE_SINGLE_CHOICE, nullable=False)
-    
+
     # For single_choice and multiple_choice questions
     option_a = Column(String, nullable=True)
     option_b = Column(String, nullable=True)
     option_c = Column(String, nullable=True)
     option_d = Column(String, nullable=True)
     correct_option = Column(String, nullable=True)  # e.g., "A", "B", or "A,B,C" for multiple
-    
+
     # For true_false questions
     is_true = Column(Boolean, nullable=True)  # True for "True", False for "False"
-    
+
     # For short_answer and fill_blank questions
     correct_answer = Column(String, nullable=True)  # Expected text
     answer_case_sensitive = Column(Boolean, default=False)
-    
+
     # For matching questions (stored as JSON: {"A": "option1", "B": "option2", ...})
     matching_pairs = Column(JSON, nullable=True)  # {"left": ["A", "B"], "right": ["1", "2"]}
     correct_matches = Column(JSON, nullable=True)  # {"A": "1", "B": "2"}
-    
+
     # For ordering questions (stored as JSON array)
     ordering_items = Column(JSON, nullable=True)  # ["item1", "item2", "item3"]
     correct_order = Column(JSON, nullable=True)  # [0, 1, 2] or ["item1", "item2", "item3"]
-    
+
     # For fill_blank questions
     blank_positions = Column(JSON, nullable=True)  # [5, 15] - character positions of blanks
-    
+
     explanation = Column(String, default="")
     order_num = Column(Integer, default=0)
     points = Column(Integer, default=1)  # Points for this question
-    
+
     quiz = relationship("Quiz", back_populates="questions")
 
 
@@ -102,7 +104,7 @@ class QuizResult(Base):
     total_points = Column(Integer, default=0)  # Total points earned
     answers = Column(JSON, nullable=True)  # Store user answers: {"question_id": "answer"}
     created_at = Column(DateTime, default=datetime.now(UTC))
-    
+
     quiz = relationship("Quiz", back_populates="results")
 
 
@@ -144,7 +146,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.now(UTC))
     last_login = Column(DateTime, nullable=True)
     session_id = Column(String, ForeignKey("user_progress.session_id"), nullable=True)
-    
+
     # Relationships
     progress = relationship("UserProgress", backref="user", uselist=False)
     user_achievements = relationship("UserAchievement", backref="user", cascade="all, delete-orphan", primaryjoin="UserAchievement.user_id == User.id")
@@ -227,5 +229,5 @@ class UserAchievement(Base):
     achievement_id = Column(Integer, ForeignKey("achievement_definitions.id"), nullable=False)
     unlocked_at = Column(DateTime, default=datetime.now(UTC))
     notification_sent = Column(Boolean, default=False)
-    
+
     achievement = relationship("AchievementDefinition", backref="user_achievements")

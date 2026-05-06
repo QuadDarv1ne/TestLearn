@@ -1,13 +1,15 @@
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from app.middleware.rate_limit import RateLimitMiddleware
 from slowapi.errors import RateLimitExceeded
+
+from app.middleware.rate_limit import RateLimitMiddleware
 
 app = FastAPI()
 app.add_middleware(RateLimitMiddleware)
 
 # Also add the exception handler as in configure_rate_limiting
 from slowapi import _rate_limit_exceeded_handler
+
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/test")

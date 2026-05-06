@@ -1,10 +1,9 @@
-from slowapi.util import get_remote_address
+import traceback
+
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.extension import _rate_limit_exceeded_handler
-from fastapi import Request
-from fastapi.responses import JSONResponse
-import traceback
+from slowapi.util import get_remote_address
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -38,16 +37,16 @@ try:
     print("\nCalling _rate_limit_exceeded_handler...")
     # The handler is async, so we need to run it properly
     import asyncio
-    
+
     async def call_handler():
         response = await _rate_limit_exceeded_handler(request, exc)
         return response
-    
+
     # Run the async function
     response = asyncio.run(call_handler())
     print(f"Handler response status: {response.status_code}")
     print(f"Handler response content: {response.body}")
-    
+
 except Exception as e:
     print(f"Error in handler: {e}")
     traceback.print_exc()

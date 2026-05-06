@@ -1,9 +1,9 @@
 """ Security utilities for password hashing and authentication """
 import hashlib
 import secrets
-from datetime import datetime, timedelta, UTC
-from typing import Optional
 import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Optional
 
 
 def hash_password(password: str) -> str:
@@ -31,7 +31,7 @@ def generate_session_id() -> str:
 def create_admin_session(username: str, db_session, expires_hours: int = 24) -> str:
     """Create a new admin session in the database."""
     from app.db.models import AdminSession
-    
+
     session_id = generate_session_id()
     expires = datetime.now(UTC) + timedelta(hours=expires_hours)
     admin_session = AdminSession(
@@ -51,31 +51,31 @@ def verify_admin_session(session_id: str, db_session) -> Optional[str]:
     Returns None if session is invalid or expired.
     """
     from app.db.models import AdminSession
-    
+
     session = db_session.query(AdminSession).filter(
         AdminSession.id == session_id
     ).first()
-    
+
     if not session:
         return None
-    
+
     if session.expires < datetime.now(UTC):
         # Session expired, delete it
         db_session.delete(session)
         db_session.commit()
         return None
-    
+
     return session.username
 
 
 def delete_admin_session(session_id: str, db_session):
     """Delete an admin session (logout)."""
     from app.db.models import AdminSession
-    
+
     session = db_session.query(AdminSession).filter(
         AdminSession.id == session_id
     ).first()
-    
+
     if session:
         db_session.delete(session)
         db_session.commit()

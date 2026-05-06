@@ -1,12 +1,13 @@
 """ Topics API router с оптимизированными SQL запросами """
-from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
 from typing import List, Optional
 
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
+
 from app.db.database import get_db
-from app.db.models import Topic, Category, ReadTopic, Bookmark
-from app.schemas import TopicResponse, TopicCreate
+from app.db.models import Bookmark, Category, ReadTopic, Topic
+from app.schemas import TopicCreate, TopicResponse
 
 router = APIRouter()
 

@@ -1,8 +1,9 @@
 """Pydantic schemas for request/response validation."""
-from pydantic import BaseModel, ConfigDict, field_validator
-from typing import Optional, List, Dict, Any, Union
-from datetime import datetime
 import re
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, field_validator
 
 # Question types
 QUESTION_TYPE_SINGLE_CHOICE = "single_choice"
@@ -74,32 +75,32 @@ class QuestionBase(BaseModel):
     quiz_id: int
     order_num: int = 0
     points: int = 1
-    
+
     # For single_choice and multiple_choice questions
     option_a: Optional[str] = None
     option_b: Optional[str] = None
     option_c: Optional[str] = None
     option_d: Optional[str] = None
     correct_option: Optional[str] = None
-    
+
     # For true_false questions
     is_true: Optional[bool] = None
-    
+
     # For short_answer and fill_blank questions
     correct_answer: Optional[str] = None
     case_sensitive: bool = False
-    
+
     # For matching questions
     matching_pairs: Optional[Dict[str, Any]] = None
     correct_matches: Optional[Dict[str, str]] = None
-    
+
     # For ordering questions
     ordering_items: Optional[List[str]] = None
     correct_order: Optional[Union[List[int], List[str]]] = None
-    
+
     # For fill_blank questions
     blank_positions: Optional[List[int]] = None
-    
+
     explanation: str = ""
 
 class QuestionCreate(QuestionBase):
@@ -156,7 +157,7 @@ class FeedbackCreate(BaseModel):
     email: Optional[str] = ""
     message: str
     rating: int = 5
-    
+
     @field_validator('name')
     @classmethod
     def validate_name(cls, v: str) -> str:
@@ -167,7 +168,7 @@ class FeedbackCreate(BaseModel):
         if len(v) < 2 or len(v) > 100:
             raise ValueError('Name must be between 2 and 100 characters')
         return v
-    
+
     @field_validator('message')
     @classmethod
     def validate_message(cls, v: str) -> str:
@@ -178,7 +179,7 @@ class FeedbackCreate(BaseModel):
         if len(v) < 5 or len(v) > 2000:
             raise ValueError('Message must be between 5 and 2000 characters')
         return v
-    
+
     @field_validator('email')
     @classmethod
     def validate_email(cls, v: str) -> str:
@@ -193,7 +194,7 @@ class FeedbackCreate(BaseModel):
         if len(v) > 254:
             raise ValueError('Email is too long')
         return v
-    
+
     @field_validator('rating')
     @classmethod
     def validate_rating(cls, v: int) -> int:
@@ -235,7 +236,7 @@ class CommentCreate(BaseModel):
     topic_id: int
     content: str
     user_id: str
-    
+
     @field_validator('content')
     @classmethod
     def validate_content(cls, v: str) -> str:
@@ -312,7 +313,7 @@ class UserRegister(BaseModel):
     email: str
     password: str
     model_config = ConfigDict(from_attributes=True)
-    
+
     @field_validator('password')
     @classmethod
     def validate_password_length(cls, v):

@@ -1,11 +1,12 @@
 """ Rate limiting middleware для API """
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+import logging
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +33,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         print(f"[RATE LIMIT MIDDLEWARE] Dispatch called for {request.url}")  # DEBUG
         try:
             result = await call_next(request)
-            print(f"[RATE LIMIT MIDDLEWARE] call_next succeeded")  # DEBUG
+            print("[RATE LIMIT MIDDLEWARE] call_next succeeded")  # DEBUG
             return result
         except RateLimitExceeded as exc:
             print(f"[RATE LIMIT MIDDLEWARE] Caught RateLimitExceeded: {exc}")  # DEBUG
             print(f"[RATE LIMIT MIDDLEWARE] exc.detail: {exc.detail}")  # DEBUG
             print(f"[RATE LIMIT MIDDLEWARE] exc.retry_after: {exc.retry_after}")  # DEBUG
-            print(f"[RATE LIMIT MIDDLEWARE] This is the except block!")  # DEBUG
+            print("[RATE LIMIT MIDDLEWARE] This is the except block!")  # DEBUG
             response_content = {
                 "detail": "Too many requests. Please try again later.",
                 "status": 429,
@@ -60,7 +61,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 def configure_rate_limiting(app):
     """Настройка rate limiting для приложения."""
-    print(f"[RATE LIMIT MIDDLEWARE] configure_rate_limiting called")  # DEBUG
+    print("[RATE LIMIT MIDDLEWARE] configure_rate_limiting called")  # DEBUG
     # Добавляем limiter к app
     app.state.limiter = limiter
 

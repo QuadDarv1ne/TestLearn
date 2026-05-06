@@ -1,21 +1,22 @@
 """User Progress API router"""
-from fastapi import APIRouter, Depends, Request
-from sqlalchemy.orm import Session
-from datetime import datetime, UTC
-import uuid
 import io
+import uuid
+from datetime import UTC, datetime
 from typing import List
 
-from app.db.database import get_db
-from app.db.models import UserProgress, ReadTopic, Bookmark, QuizResult
-from app.schemas import UserProgressResponse
-from app.utils.cache import cache
+from fastapi import APIRouter, Depends, Request
 
 # PDF generation
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from sqlalchemy.orm import Session
+
+from app.db.database import get_db
+from app.db.models import Bookmark, QuizResult, ReadTopic, UserProgress
+from app.schemas import UserProgressResponse
+from app.utils.cache import cache
 
 router = APIRouter()
 

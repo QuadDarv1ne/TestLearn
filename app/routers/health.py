@@ -1,9 +1,11 @@
 """ Health check and system status endpoints """
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, UTC
+
 from app.db.database import get_db
-from app.db.models import Category, Topic, Quiz, Question, GlossaryTerm, Feedback, UserProgress
+from app.db.models import Category, Feedback, GlossaryTerm, Question, Quiz, Topic, UserProgress
 
 router = APIRouter()
 

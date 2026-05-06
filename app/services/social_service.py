@@ -1,16 +1,19 @@
 """Сервис для социальных функций: комментарии и уведомления."""
-from datetime import datetime, UTC
-from typing import List, Optional
+from datetime import UTC, datetime
+from typing import Optional
+
 from sqlalchemy.orm import Session
+
 
 class CommentService:
     """Сервис для управления комментариями к темам."""
-    
+
     @staticmethod
     def add_comment(topic_id: int, user_id: str, content: str, db: Session) -> Optional["Comment"]:
         """Добавить комментарий к теме."""
-        from app.db.models import Comment as CommentModel, Topic
-        
+        from app.db.models import Comment as CommentModel
+        from app.db.models import Topic
+
         # Валидация контента
         if not content or not content.strip():
             return None
@@ -18,12 +21,12 @@ class CommentService:
             return None
         if len(content) > 1000:
             return None
-        
+
         # Проверка существования темы
         topic = db.query(Topic).filter(Topic.id == topic_id).first()
         if not topic:
             return None
-        
+
         comment = CommentModel(
             topic_id=topic_id,
             user_id=user_id,
@@ -34,7 +37,7 @@ class CommentService:
         db.add(comment)
         db.commit()
         db.refresh(comment)
-        
+
         from app.schemas import CommentResponse
         return CommentResponse(
             id=comment.id,
@@ -44,7 +47,7 @@ class CommentService:
             created_at=comment.created_at.isoformat(),
             likes=comment.likes
         )
-    
+
     @staticmethod
     def get_comments(topic_id: int, db: Session, limit: int = 20, offset: int = 0) -> dict:
         """
@@ -61,7 +64,7 @@ class CommentService:
         """
         from app.db.models import Comment as CommentModel
         from app.schemas import CommentResponse
-        
+
         # Валидация параметров
         if limit is None or limit < 1:
             limit = 20
@@ -69,17 +72,17 @@ class CommentService:
             limit = 100
         if offset is None or offset < 0:
             offset = 0
-        
+
         # Получаем общее количество комментариев
         total = db.query(CommentModel).filter(CommentModel.topic_id == topic_id).count()
-        
+
         # Получаем комментарии для текущей страницы
         comments = db.query(CommentModel).filter(
             CommentModel.topic_id == topic_id
         ).order_by(
             CommentModel.created_at.desc()
         ).offset(offset).limit(limit).all()
-        
+
         # Конвертируем в Response
         items = [
             CommentResponse(
@@ -92,12 +95,12 @@ class CommentService:
             )
             for c in comments
         ]
-        
+
         # Рассчитываем метаданные пагинации
         page_size = limit
         page = (offset // page_size) + 1 if page_size > 0 else 1
         total_pages = (total + page_size - 1) // page_size if total > 0 else 0
-        
+
         return {
             "items": items,
             "total": total,
@@ -107,7 +110,7 @@ class CommentService:
             "has_next": offset + len(items) < total,
             "has_prev": offset > 0
         }
-    
+
     @staticmethod
     def like_comment(comment_id: str, db: Session) -> bool:
         """Поставить лайк комментарию."""
@@ -121,7 +124,7 @@ class CommentService:
 
 class NotificationService:
     """Сервис для управления уведомлениями."""
-    
+
     @staticmethod
     def create_notification(
         user_id: str,
@@ -132,13 +135,13 @@ class NotificationService:
     ) -> Optional["Notification"]:
         """Создать уведомление."""
         from app.db.models import Notification as NotificationModel
-        
+
         # Валидация
         if not title or not title.strip():
             return None
         if not message or not message.strip():
             return None
-        
+
         notif = NotificationModel(
             user_id=user_id,
             title=title.strip(),
@@ -150,7 +153,7 @@ class NotificationService:
         db.add(notif)
         db.commit()
         db.refresh(notif)
-        
+
         from app.schemas import NotificationResponse
         return NotificationResponse(
             id=notif.id,
@@ -161,7 +164,7 @@ class NotificationService:
             is_read=notif.is_read,
             created_at=notif.created_at.isoformat()
         )
-    
+
     @staticmethod
     def get_unread_notifications(user_id: str, db: Session, limit: int = 20, offset: int = 0) -> dict:
         """
@@ -178,7 +181,7 @@ class NotificationService:
         """
         from app.db.models import Notification as NotificationModel
         from app.schemas import NotificationResponse
-        
+
         # Валидация параметров
         if limit is None or limit < 1:
             limit = 20
@@ -186,13 +189,13 @@ class NotificationService:
             limit = 100
         if offset is None or offset < 0:
             offset = 0
-        
+
         # Получаем общее количество непрочитанных уведомлений
         total = db.query(NotificationModel).filter(
             NotificationModel.user_id == user_id,
             NotificationModel.is_read.is_(False)
         ).count()
-        
+
         # Получаем уведомления для текущей страницы
         notifications = db.query(NotificationModel).filter(
             NotificationModel.user_id == user_id,
@@ -200,7 +203,7 @@ class NotificationService:
         ).order_by(
             NotificationModel.created_at.desc()
         ).offset(offset).limit(limit).all()
-        
+
         # Конвертируем в Response
         items = [
             NotificationResponse(
@@ -214,12 +217,12 @@ class NotificationService:
             )
             for n in notifications
         ]
-        
+
         # Рассчитываем метаданные пагинации
         page_size = limit
         page = (offset // page_size) + 1 if page_size > 0 else 1
         total_pages = (total + page_size - 1) // page_size if total > 0 else 0
-        
+
         return {
             "items": items,
             "total": total,
@@ -229,7 +232,7 @@ class NotificationService:
             "has_next": offset + len(items) < total,
             "has_prev": offset > 0
         }
-    
+
     @staticmethod
     def mark_as_read(notification_id: str, db: Session) -> bool:
         """Отметить уведомление как прочитанное."""

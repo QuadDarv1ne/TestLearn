@@ -1,18 +1,21 @@
 """
 Quizzes API router
 """
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Any, Dict
-from datetime import datetime, UTC
 
 from app.db.database import get_db
-from app.db.models import Quiz, Question, QuizResult, Category, UserProgress
+from app.db.models import Category, Question, Quiz, QuizResult, UserProgress
 from app.schemas import (
-    QuizResponse, QuestionCreate, QuestionResponse,
-    QuizResultResponse, QuizResultDetail, QuizSubmit, QuizAnswerSubmit
+    QuestionCreate,
+    QuestionResponse,
+    QuizResponse,
+    QuizResultDetail,
+    QuizSubmit,
 )
-from app.services import QuizCheckerService, ProgressService
+from app.services import ProgressService, QuizCheckerService
 
 router = APIRouter()
 
@@ -78,7 +81,7 @@ def take_quiz(quiz_id: int, db: Session = Depends(get_db)):
             "order_num": q.order_num,
             "points": q.points,
         }
-        
+
         # Include options based on question type
         if q.question_type in ["single_choice", "multiple_choice", None]:
             q_data["option_a"] = q.option_a
@@ -94,7 +97,7 @@ def take_quiz(quiz_id: int, db: Session = Depends(get_db)):
             q_data["ordering_items"] = q.ordering_items
         elif q.question_type in ["short_answer", "fill_blank"]:
             pass  # No options needed
-        
+
         result.append(q_data)
 
     return result
@@ -113,30 +116,30 @@ def submit_quiz(quiz_id: int, submission: QuizSubmit, db: Session = Depends(get_
     # Get all questions for this quiz
     questions = db.query(Question).filter(Question.quiz_id == quiz_id).all()
     questions_map = {q.id: q for q in questions}
-    
+
     # Grade each answer
     total_points = 0
     max_points = sum(q.points for q in questions)
     correct_count = 0
     question_results = []
     answers_dict = {}
-    
+
     for answer_sub in submission.answers:
         question = questions_map.get(answer_sub.question_id)
         if not question:
             continue
-        
+
         is_correct, points, explanation = QuizCheckerService.check_answer(
             question, answer_sub.answer
         )
-        
+
         total_points += points
         if is_correct:
             correct_count += 1
-        
+
         # Store user answer
         answers_dict[str(answer_sub.question_id)] = answer_sub.answer
-        
+
         question_results.append({
             "question_id": answer_sub.question_id,
             "question_text": question.question_text,
@@ -147,11 +150,11 @@ def submit_quiz(quiz_id: int, submission: QuizSubmit, db: Session = Depends(get_
             "user_answer": answer_sub.answer,
             "explanation": explanation
         })
-    
+
     # Calculate score as percentage
     score = correct_count
     total = len(questions)
-    
+
     # Create quiz result
     db_result = QuizResult(
         quiz_id=quiz_id,
@@ -162,11 +165,11 @@ def submit_quiz(quiz_id: int, submission: QuizSubmit, db: Session = Depends(get_
         answers=answers_dict
     )
     db.add(db_result)
-    
+
     # Update user progress if session_id provided
     if submission.session_id:
         ProgressService.add_experience(submission.session_id, total_points, db)
-        
+
         # Increment quizzes_passed if score >= 50%
         if total > 0 and (correct_count / total) >= 0.5:
             progress = db.query(UserProgress).filter(
@@ -174,13 +177,13 @@ def submit_quiz(quiz_id: int, submission: QuizSubmit, db: Session = Depends(get_
             ).first()
             if progress:
                 progress.quizzes_passed += 1
-    
+
     db.commit()
     db.refresh(db_result)
-    
+
     # Calculate percentage
     percentage = (score / total * 100) if total > 0 else 0
-    
+
     return {
         "id": db_result.id,
         "quiz_id": db_result.quiz_id,
@@ -201,11 +204,11 @@ def get_quiz_result(result_id: str, db: Session = Depends(get_db)):
     result = db.query(QuizResult).filter(QuizResult.id == result_id).first()
     if not result:
         raise HTTPException(status_code=404, detail="Result not found")
-    
+
     # Rebuild question results from stored answers
     questions = db.query(Question).filter(Question.quiz_id == result.quiz_id).all()
     question_results = []
-    
+
     answers = result.answers or {}
     for q in questions:
         user_answer = answers.get(str(q.id))
@@ -221,9 +224,9 @@ def get_quiz_result(result_id: str, db: Session = Depends(get_db)):
                 "user_answer": user_answer,
                 "explanation": explanation
             })
-    
+
     percentage = (result.score / result.total * 100) if result.total > 0 else 0
-    
+
     return {
         "id": result.id,
         "quiz_id": result.quiz_id,
@@ -276,7 +279,7 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
 
     # Validate question type-specific fields
     q_type = question.question_type or "single_choice"
-    
+
     if q_type == "single_choice":
         if question.correct_option not in ["A", "B", "C", "D"]:
             raise HTTPException(status_code=400, detail="Correct option must be A, B, C, or D")

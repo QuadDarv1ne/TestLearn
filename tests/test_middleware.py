@@ -1,12 +1,10 @@
-import pytest
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.testclient import TestClient
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-from starlette.datastructures import Headers
+from fastapi.testclient import TestClient
+from slowapi.errors import RateLimitExceeded
 
 from app.middleware.csrf import CSRFMiddleware, get_csrf_token
-from app.middleware.rate_limit import RateLimitMiddleware, configure_rate_limiting, limiter
-from slowapi.errors import RateLimitExceeded
+from app.middleware.rate_limit import RateLimitMiddleware, configure_rate_limiting
 
 
 # Test CSRF Middleware

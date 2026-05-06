@@ -1,8 +1,9 @@
 """Router for social features: comments and notifications."""
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
-from sqlalchemy.orm import Session
-from typing import List, Optional
 import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy.orm import Session
+
 from app.db.database import get_db
 from app.db.models import Topic
 from app.schemas import CommentCreate, CommentResponse
@@ -35,14 +36,14 @@ def add_comment(comment_data: CommentCreate, request: Request, db: Session = Dep
     """Add a comment to a topic."""
     # Get or create session ID for user identification
     session_id = request.cookies.get("session_id", str(uuid.uuid4()))
-    
+
     comment = CommentService.add_comment(
         topic_id=comment_data.topic_id,
         user_id=session_id,
         content=comment_data.content,
         db=db
     )
-    
+
     if comment is None:
         # Check if topic exists
         from app.db.database import SessionLocal
@@ -54,7 +55,7 @@ def add_comment(comment_data: CommentCreate, request: Request, db: Session = Dep
         finally:
             db_check.close()
         raise HTTPException(status_code=400, detail="Invalid comment content")
-    
+
     return comment
 
 @router.post("/comments/{comment_id}/like")
@@ -78,9 +79,9 @@ def get_notifications(
     Returns paginated list of unread notifications with metadata.
     """
     from app.services.social_service import NotificationService
-    
+
     session_id = request.cookies.get("session_id", "anonymous")
-    
+
     result = NotificationService.get_unread_notifications(
         user_id=session_id,
         db=db,

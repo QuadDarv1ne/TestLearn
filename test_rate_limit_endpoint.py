@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
+
 from main import app
+
 
 def test_rate_limit_endpoint():
     """Test the rate limit endpoint exists and works."""

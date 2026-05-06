@@ -1,12 +1,12 @@
 """ Frontend pages router """
-from fastapi import APIRouter, Request, HTTPException
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
 from datetime import datetime
 
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session, joinedload
+
 from app.db.database import get_db
-from app.db.models import Topic, Category, ReadTopic, User, Quiz, Question, GlossaryTerm
+from app.db.models import ReadTopic, Topic
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")

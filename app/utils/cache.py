@@ -1,8 +1,7 @@
 """ Кэширование для оптимизации производительности """
-from functools import lru_cache
-from typing import Any, Dict, Optional, Callable
-import time
 import logging
+import time
+from typing import Any, Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +146,7 @@ def cached(ttl: int = 300, key_prefix: str = ""):
 def get_categories_from_db(db_session) -> list:
     """Кэшированная функция получения категорий из БД."""
     from sqlalchemy import inspect
+
     from app.db.models import Category
 
     # Проверяем есть ли данные в таблице
@@ -165,8 +165,7 @@ def get_categories_from_db(db_session) -> list:
 @cached(ttl=60, key_prefix="stats")
 def get_platform_stats(db_session) -> dict:
     """Кэшированная функция получения статистики платформы."""
-    from sqlalchemy import func
-    from app.db.models import Category, Topic, Quiz, Question, GlossaryTerm
+    from app.db.models import Category, GlossaryTerm, Question, Quiz, Topic
 
     stats = {
         "categories": db_session.query(Category).count(),

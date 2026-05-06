@@ -1,13 +1,14 @@
 """
 Glossary API router
 """
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.db.database import get_db
 from app.db.models import GlossaryTerm
-from app.schemas import GlossaryTermResponse, GlossaryTermCreate
+from app.schemas import GlossaryTermCreate, GlossaryTermResponse
 
 router = APIRouter()
 

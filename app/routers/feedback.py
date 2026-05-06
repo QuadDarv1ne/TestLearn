@@ -1,9 +1,10 @@
 """
 Feedback API router
 """
+from typing import List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.db.database import get_db
 from app.db.models import Feedback as FeedbackModel
@@ -33,8 +34,8 @@ def get_feedback(db: Session = Depends(get_db)):
 @router.post("", response_model=FeedbackResponse)
 def create_feedback(feedback: FeedbackCreate, db: Session = Depends(get_db)):
     """Submit new feedback."""
-    from datetime import datetime, UTC
     import uuid
+    from datetime import UTC, datetime
 
     db_feedback = FeedbackModel(
         id=str(uuid.uuid4()),

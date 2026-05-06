@@ -1,14 +1,13 @@
 """
 Сервис для поиска и рекомендаций
 """
-from typing import List, Dict, Any, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from typing import Any, Dict, List, Optional
 
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.db.models import Category, GlossaryTerm, ReadTopic, Topic
 from app.models import SearchResults
-from app.db.models import (
-    Category, Topic, GlossaryTerm, ReadTopic
-)
 
 
 class SearchService:

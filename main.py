@@ -16,32 +16,38 @@ API Documentation:
 Организация: Московский областной филиал МФЮА
 """
 
-from fastapi import FastAPI, Request, Depends, HTTPException
+import logging
+from contextlib import asynccontextmanager
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm.exc import NoResultFound
-import logging
-from typing import Union
-import time
-from dotenv import load_dotenv
 
 # Загрузка переменных окружения
 load_dotenv()
 
 # Импорт роутеров
-from app.routers import auth, categories, topics, quizzes, glossary, feedback, progress, gamification, social, health, search, pages
-from app.db.database import engine, Base
-from app.db import models  # Импортируем модели для регистрации в Alembic
+from app.db.database import Base, engine
+from app.middleware.rate_limit import _rate_limit_exceeded_handler, configure_rate_limiting, limiter
+from app.routers import (
+    auth,
+    categories,
+    feedback,
+    gamification,
+    glossary,
+    health,
+    pages,
+    progress,
+    quizzes,
+    search,
+    social,
+    topics,
+)
 from app.services import LeaderboardService
-from app.services.progress_service import ProgressService
-from app.services.search_service import SearchService, RecommendationService
-from app.services.gamification_service import CertificateService
-from app.services.social_service import CommentService, NotificationService
-from app.middleware.rate_limit import configure_rate_limiting, limiter, _rate_limit_exceeded_handler
 from app.utils.cache import cache
 
 # Настройка логгирования
@@ -146,7 +152,6 @@ configure_rate_limiting(app)
 
 # Добавляем limiter к зависимостям по умолчанию
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -208,7 +213,8 @@ async def general_exception_handler(request: Request, exc: Exception):
 @app.get("/theory", include_in_schema=False)
 async def theory_page(request: Request):
     """Теория раздел."""
-    from sqlalchemy.orm import Session
+    from sqlalchemy.orm import Session, joinedload
+
     from app.db.database import get_db
     from app.db.models import Category, Topic
 
@@ -255,10 +261,12 @@ async def theory_page(request: Request):
 @app.get("/topic/{topic_id}", include_in_schema=False)
 async def topic_page(request: Request, topic_id: int):
     """Страница отдельной темы."""
-    from sqlalchemy.orm import Session
-    from app.db.database import get_db
-    from app.db.models import Topic, Category, ReadTopic, User
     from datetime import datetime
+
+    from sqlalchemy.orm import Session, joinedload
+
+    from app.db.database import get_db
+    from app.db.models import ReadTopic, Topic, User
 
     db: Session = next(get_db())
     try:
@@ -323,9 +331,10 @@ async def topic_page(request: Request, topic_id: int):
 @app.get("/quiz", include_in_schema=False)
 async def quiz_page(request: Request):
     """Тесты раздел."""
-    from sqlalchemy.orm import Session
+    from sqlalchemy.orm import Session, joinedload
+
     from app.db.database import get_db
-    from app.db.models import Quiz, Question
+    from app.db.models import Question, Quiz
 
     db: Session = next(get_db())
     try:
@@ -366,7 +375,8 @@ async def quiz_page(request: Request):
 @app.get("/glossary", include_in_schema=False)
 async def glossary_page(request: Request):
     """Глоссарий раздел."""
-    from sqlalchemy.orm import Session
+    from sqlalchemy.orm import Session, joinedload
+
     from app.db.database import get_db
     from app.db.models import GlossaryTerm
 
@@ -416,10 +426,11 @@ async def stats_page(request: Request):
     if cached_stats is not None:
         return templates.TemplateResponse(request, "stats.html", cached_stats)
 
-    from sqlalchemy.orm import Session
-    from app.db.database import get_db
-    from app.db.models import UserProgress, Topic, Category, QuizResult, Quiz
     from sqlalchemy import func
+    from sqlalchemy.orm import Session, joinedload
+
+    from app.db.database import get_db
+    from app.db.models import Category, Quiz, QuizResult, Topic, UserProgress
 
     db: Session = next(get_db())
     try:
@@ -479,7 +490,7 @@ async def stats_page(request: Request):
 
         top_results = []
         for result, quiz_title in top_results_query:
-            percentage = int((result.score / result.total * 100)) if result.total > 0 else 0
+            percentage = int(result.score / result.total * 100) if result.total > 0 else 0
             top_results.append({
                 'quiz_title': quiz_title,
                 'score': result.score,
@@ -518,7 +529,8 @@ async def bookmarks_page(request: Request):
 async def database_page(request: Request):
     """База данных раздел."""
     from sqlalchemy import text
-    from sqlalchemy.orm import Session
+    from sqlalchemy.orm import Session, joinedload
+
     from app.db.database import get_db
 
     db: Session = next(get_db())
@@ -583,10 +595,11 @@ async def about_page(request: Request):
 @app.get("/feedback", include_in_schema=False)
 async def feedback_page(request: Request):
     """Обратная связь раздел."""
-    from sqlalchemy.orm import Session
+    from sqlalchemy import func
+    from sqlalchemy.orm import Session, joinedload
+
     from app.db.database import get_db
     from app.db.models import Feedback
-    from sqlalchemy import func
 
     db: Session = next(get_db())
     try:
@@ -613,9 +626,8 @@ async def login_page(request: Request):
 @app.get("/", include_in_schema=False)
 async def home(request: Request):
     """Главная страница."""
-    from sqlalchemy.orm import Session
     from app.db.database import get_db
-    from app.db.models import Category, Topic, Question, GlossaryTerm
+    from app.db.models import Category, GlossaryTerm, Question, Topic
 
     # Получаем статистику
     db = next(get_db())

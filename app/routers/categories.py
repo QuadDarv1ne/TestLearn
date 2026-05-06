@@ -1,12 +1,13 @@
 """ Categories API router с оптимизированными SQL запросами """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.db.models import Category, Topic
-from app.schemas import CategoryResponse, CategoryCreate
+from app.schemas import CategoryCreate, CategoryResponse
 
 router = APIRouter()
 

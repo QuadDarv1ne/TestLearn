@@ -1,8 +1,7 @@
 """Initial database schema."""
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers
 revision = '001_initial'
@@ -24,7 +23,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('name'),
         sa.UniqueConstraint('slug')
     )
-    
+
     # Create topics table
     op.create_table(
         'topics',
@@ -36,7 +35,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create quizzes table
     op.create_table(
         'quizzes',
@@ -47,7 +46,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ondelete='SET NULL'),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create questions table
     op.create_table(
         'questions',
@@ -64,7 +63,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['quiz_id'], ['quizzes.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create quiz_results table
     op.create_table(
         'quiz_results',
@@ -76,7 +75,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['quiz_id'], ['quizzes.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create glossary table
     op.create_table(
         'glossary',
@@ -87,7 +86,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('term')
     )
-    
+
     # Create feedback table
     op.create_table(
         'feedback',
@@ -99,7 +98,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create user_progress table
     op.create_table(
         'user_progress',
@@ -112,7 +111,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('session_id')
     )
-    
+
     # Create read_topics table
     op.create_table(
         'read_topics',
@@ -121,7 +120,7 @@ def upgrade() -> None:
         sa.Column('read_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('session_id', 'topic_id')
     )
-    
+
     # Create bookmarks table
     op.create_table(
         'bookmarks',
@@ -131,7 +130,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('session_id', 'topic_id'),
         sa.ForeignKeyConstraint(['topic_id'], ['topics.id'], ondelete='CASCADE')
     )
-    
+
     # Create admin_sessions table
     op.create_table(
         'admin_sessions',
@@ -141,7 +140,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create comments table
     op.create_table(
         'comments',
@@ -154,7 +153,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['topic_id'], ['topics.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create notifications table
     op.create_table(
         'notifications',
@@ -167,7 +166,7 @@ def upgrade() -> None:
         sa.Column('created_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    
+
     # Create admin_users table
     op.create_table(
         'admin_users',
@@ -179,7 +178,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('username')
     )
-    
+
     # Create indexes
     op.create_index('ix_categories_id', 'categories', ['id'])
     op.create_index('ix_categories_slug', 'categories', ['slug'])
@@ -199,7 +198,7 @@ def downgrade() -> None:
     op.drop_index('ix_topics_id', table_name='topics')
     op.drop_index('ix_categories_slug', table_name='categories')
     op.drop_index('ix_categories_id', table_name='categories')
-    
+
     op.drop_table('admin_users')
     op.drop_table('notifications')
     op.drop_table('comments')

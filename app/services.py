@@ -1,18 +1,32 @@
 ﻿"""
 Сервисный слой для бизнес-логики образовательной платформы
 """
-from datetime import datetime, UTC
-from typing import Optional, List, Dict, Any
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from datetime import UTC, datetime
+from typing import Any, Dict, List, Optional
 
-from app.models import (
-    Achievement, DailyChallenge, SearchResults, CategoryStats,
-    LeaderboardEntry, Certificate, Comment, Notification
-)
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.db.models import (
-    Category, Topic, Quiz, Question, GlossaryTerm,
-    UserProgress, QuizResult, ReadTopic, AchievementDefinition, UserAchievement
+    AchievementDefinition,
+    Category,
+    GlossaryTerm,
+    Quiz,
+    QuizResult,
+    ReadTopic,
+    Topic,
+    UserAchievement,
+    UserProgress,
+)
+from app.models import (
+    Achievement,
+    CategoryStats,
+    Certificate,
+    Comment,
+    DailyChallenge,
+    LeaderboardEntry,
+    Notification,
+    SearchResults,
 )
 
 
@@ -82,7 +96,7 @@ class ProgressService:
                     unlocked = quizzes_passed >= ach_def.requirement_value
                 elif ach_def.category == "score":
                     unlocked = total_score >= ach_def.requirement_value
-            
+
             # Проверяем, разблокировано ли уже достижение
             user_achievement = db.query(UserAchievement).filter(
                 UserAchievement.user_id == session_id,
@@ -145,10 +159,10 @@ class ProgressService:
                     unlocked_at=datetime.now(UTC)
                 )
                 db.add(user_achievement)
-                
+
                 # Начисляем награду в виде опыта
                 progress.total_score += ach_def.xp_reward
-                
+
                 newly_unlocked.append(Achievement(
                     id=ach_def.id,
                     name=ach_def.name,

@@ -1,16 +1,25 @@
 """
 Сервис для управления прогрессом пользователя и геймификацией
 """
-from datetime import datetime, UTC
-from typing import Optional, List
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from datetime import UTC, datetime
+from typing import List, Optional
 
-from app.models import Achievement, DailyChallenge, CategoryStats
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.db.models import (
-    Category, Topic, Quiz, Question, UserProgress, ReadTopic, 
-    QuizResult, AchievementDefinition, UserAchievement, GlossaryTerm
+    AchievementDefinition,
+    Category,
+    GlossaryTerm,
+    Question,
+    Quiz,
+    QuizResult,
+    ReadTopic,
+    Topic,
+    UserAchievement,
+    UserProgress,
 )
+from app.models import Achievement, CategoryStats, DailyChallenge
 
 
 def seed_initial_data():
@@ -28,7 +37,7 @@ def seed_initial_data():
             tables_exist = True
         except:
             pass  # Таблицы ещё не созданы, продолжаем
-        
+
         if tables_exist:
             db.query(Question).delete()
             db.query(Quiz).delete()
@@ -155,7 +164,7 @@ def seed_initial_data():
             ("tools", "Инструменты тестирования", "Selenium, Postman, JUnit и другие инструменты"),
             ("test-creation", "Создание тестов", "Тест-кейсы, чек-листы и тестовые сценарии"),
         ]
-        
+
         created_quizzes = {}
         for slug, title, description in quizzes_data:
             category = cat_by_slug.get(slug)
@@ -168,9 +177,9 @@ def seed_initial_data():
                 db.add(quiz)
                 db.flush()  # Получаем ID до commit
                 created_quizzes[slug] = quiz
-        
+
         db.commit()
-        
+
         # --- Вопросы для теста "Основы функционального тестирования" (25 вопросов) ---
         functional_questions = [
             # Базовые вопросы (1-5)
@@ -323,7 +332,7 @@ def seed_initial_data():
                 "Трассируемость обеспечивает связь между требованиями, кодом и тестами."
             ),
         ]
-        
+
         # Добавляем вопросы к первому тесту
         if "functional" in created_quizzes:
             quiz_id = created_quizzes["functional"].id
@@ -340,7 +349,7 @@ def seed_initial_data():
                     order_num=idx + 1
                 )
                 db.add(question)
-        
+
         # --- Вопросы для теста "Нефункциональное тестирование" (15 вопросов) ---
         non_functional_questions = [
             (
@@ -434,7 +443,7 @@ def seed_initial_data():
                 "Надёжность — способность системы выполнять функции без сбоев в заданных условиях."
             ),
         ]
-        
+
         if "non-functional" in created_quizzes:
             quiz_id = created_quizzes["non-functional"].id
             for idx, (q_text, opt_a, opt_b, opt_c, opt_d, correct, explanation) in enumerate(non_functional_questions):
@@ -450,7 +459,7 @@ def seed_initial_data():
                     order_num=idx + 1
                 )
                 db.add(question)
-        
+
         # --- Вопросы для теста "Методологии и подходы" (15 вопросов) ---
         methodology_questions = [
             (
@@ -540,7 +549,7 @@ def seed_initial_data():
                 "DevOps — культура и практики для ускорения доставки ПО через сотрудничество."
             ),
         ]
-        
+
         if "methodologies" in created_quizzes:
             quiz_id = created_quizzes["methodologies"].id
             for idx, (q_text, opt_a, opt_b, opt_c, opt_d, correct, explanation) in enumerate(methodology_questions):
@@ -556,7 +565,7 @@ def seed_initial_data():
                     order_num=idx + 1
                 )
                 db.add(question)
-        
+
         # --- Вопросы для теста "Инструменты тестирования" (15 вопросов) ---
         tools_questions = [
             (
@@ -648,7 +657,7 @@ def seed_initial_data():
                 "Cucumber — инструмент для автоматизации тестов в стиле BDD с Gherkin."
             ),
         ]
-        
+
         if "tools" in created_quizzes:
             quiz_id = created_quizzes["tools"].id
             for idx, (q_text, opt_a, opt_b, opt_c, opt_d, correct, explanation) in enumerate(tools_questions):
@@ -664,7 +673,7 @@ def seed_initial_data():
                     order_num=idx + 1
                 )
                 db.add(question)
-        
+
         # --- Вопросы для теста "Создание тестов" (15 вопросов) ---
         test_creation_questions = [
             (
@@ -758,7 +767,7 @@ def seed_initial_data():
                 "Фикстуры подготавливают окружение и данные для выполнения тестов."
             ),
         ]
-        
+
         if "test-creation" in created_quizzes:
             quiz_id = created_quizzes["test-creation"].id
             for idx, (q_text, opt_a, opt_b, opt_c, opt_d, correct, explanation) in enumerate(test_creation_questions):
@@ -836,7 +845,7 @@ def seed_initial_data():
                 "Стоимость исправления бага растёт экспоненциально с каждой стадией разработки."
             ),
         ]
-        
+
         if "functional" in created_quizzes:
             quiz_id = created_quizzes["functional"].id
             current_count = db.query(Question).filter(Question.quiz_id == quiz_id).count()
@@ -916,7 +925,7 @@ def seed_initial_data():
                 "UX-тестирование эффективно проводить на прототипах и ранних версиях."
             ),
         ]
-        
+
         if "non-functional" in created_quizzes:
             quiz_id = created_quizzes["non-functional"].id
             current_count = db.query(Question).filter(Question.quiz_id == quiz_id).count()
@@ -997,7 +1006,7 @@ def seed_initial_data():
                 "Spike — временная задача для исследования, прототипирования или оценки."
             ),
         ]
-        
+
         if "methodologies" in created_quizzes:
             quiz_id = created_quizzes["methodologies"].id
             current_count = db.query(Question).filter(Question.quiz_id == quiz_id).count()
@@ -1078,7 +1087,7 @@ def seed_initial_data():
                 "Grafana отображает метрики из Prometheus, InfluxDB и других источников."
             ),
         ]
-        
+
         if "tools" in created_quizzes:
             quiz_id = created_quizzes["tools"].id
             current_count = db.query(Question).filter(Question.quiz_id == quiz_id).count()
@@ -1159,7 +1168,7 @@ def seed_initial_data():
                 "Независимость тестов позволяет запускать их в любом порядке и параллельно."
             ),
         ]
-        
+
         if "test-creation" in created_quizzes:
             quiz_id = created_quizzes["test-creation"].id
             current_count = db.query(Question).filter(Question.quiz_id == quiz_id).count()
@@ -1344,7 +1353,7 @@ class ProgressService:
                     unlocked = quizzes_passed >= ach_def.requirement_value
                 elif ach_def.category == "score":
                     unlocked = total_score >= ach_def.requirement_value
-            
+
             # Проверяем, разблокировано ли уже достижение
             user_achievement = db.query(UserAchievement).filter(
                 UserAchievement.user_id == session_id,
@@ -1407,10 +1416,10 @@ class ProgressService:
                     unlocked_at=datetime.now(UTC)
                 )
                 db.add(user_achievement)
-                
+
                 # Начисляем награду в виде опыта
                 progress.total_score += ach_def.xp_reward
-                
+
                 newly_unlocked.append(Achievement(
                     id=ach_def.id,
                     name=ach_def.name,

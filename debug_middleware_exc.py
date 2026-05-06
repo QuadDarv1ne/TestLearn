@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from app.middleware.rate_limit import RateLimitMiddleware
 from slowapi.errors import RateLimitExceeded
+
+from app.middleware.rate_limit import RateLimitMiddleware
 
 print("Creating app...")
 app = FastAPI()

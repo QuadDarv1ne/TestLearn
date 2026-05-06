@@ -1,10 +1,11 @@
 """ Search API router for TestLearn platform """
+from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import Dict, Any
 
 from app.db.database import get_db
-from app.db.models import Topic, Category, GlossaryTerm
+from app.db.models import Category, GlossaryTerm, Topic
 
 router = APIRouter()
 

@@ -1,13 +1,20 @@
 """ Authentication API router """
-from fastapi import APIRouter, Depends, HTTPException, Response, Request
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+
 from app.db.database import get_db
 from app.db.models import AdminUser, User
 from app.schemas import AdminLogin, UserRegister, UserRegisterResponse
-from app.security import hash_password, verify_password, create_admin_session, \
-    verify_admin_session, delete_admin_session
-from datetime import datetime, UTC
-from fastapi.templating import Jinja2Templates
+from app.security import (
+    create_admin_session,
+    delete_admin_session,
+    hash_password,
+    verify_admin_session,
+    verify_password,
+)
 
 router = APIRouter()
 
@@ -103,7 +110,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
 
-    admin = db.query(AdminUser).filter(AdminUser.username == register_data.username).first()
+    admin = db.query(AdminUser).filter(AdminUser.username == username).first()
     if not admin:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -130,7 +137,7 @@ def change_password(
     if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired session")
 
-    admin = db.query(AdminUser).filter(AdminUser.username == register_data.username).first()
+    admin = db.query(AdminUser).filter(AdminUser.username == username).first()
     if not verify_password(old_password, admin.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
 

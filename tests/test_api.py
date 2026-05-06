@@ -1,9 +1,10 @@
 """Tests for TestLearn application."""
 import pytest
 from fastapi.testclient import TestClient
-from main import app
+
 from app.db.database import Base, engine
 from app.services.progress_service import seed_initial_data
+from main import app
 
 # Create tables and seed data before any tests
 Base.metadata.create_all(bind=engine)

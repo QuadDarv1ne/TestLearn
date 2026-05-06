@@ -1,10 +1,11 @@
+
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
-from app.middleware.rate_limit import RateLimitMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import traceback
+from slowapi.util import get_remote_address
+
+from app.middleware.rate_limit import RateLimitMiddleware
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -12,8 +13,8 @@ app = FastAPI()
 app.add_middleware(RateLimitMiddleware)
 # Configure like in main.py
 from app.middleware.rate_limit import configure_rate_limiting
+
 configure_rate_limiting(app)
-from slowapi.errors import RateLimitExceeded
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
