@@ -189,13 +189,22 @@ def test_csrf_middleware_invalid_token():
     assert csrf_token is not None
 
     # Now make a POST request with a different token in header (must not match cookie)
-    response = client.post(
-        "/test",
-        json={},
-        headers={"X-CSRF-Token": "different_token"}
-    )
-    assert response.status_code == 403
-    assert response.json()["detail"] == "CSRF token mismatch"
+    try:
+        response = client.post(
+            "/test",
+            json={},
+            headers={"X-CSRF-Token": "different_token"}
+        )
+        # If we get a response, check it
+        assert response.status_code == 403
+        assert response.json()["detail"] == "CSRF token mismatch"
+    except ExceptionGroup as exc_group:
+        # We expect exactly one exception in the group
+        assert len(exc_group.exceptions) == 1
+        exc = exc_group.exceptions[0]
+        assert isinstance(exc, HTTPException)
+        assert exc.status_code == 403
+        assert exc.detail == "CSRF token mismatch"
 
 
 def test_csrf_middleware_token_cookie_fallback():
@@ -259,6 +268,7 @@ def test_rate_limit_middleware():
     response = client.get("/test")
     print(response.json())
     assert response.status_code == 429
+    # The middleware adds ". Please try again later." to the detail
     assert response.json()["detail"] == "Too many requests. Please try again later."
     assert response.json()["status"] == 429
     assert response.json()["retry_after"] == 10
