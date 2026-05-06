@@ -72,18 +72,9 @@ def test_csrf_middleware_missing_token():
     # Explicitly clear cookies to ensure clean state
     client.cookies.clear()
     # Now make POST without CSRF token (no header, no form, no cookie)
-    try:
-        response = client.post("/test", json={})
-        # If we get a response, check it
-        assert response.status_code == 403
-        assert response.json()["detail"] == "CSRF token missing"
-    except ExceptionGroup as exc_group:
-        # We expect exactly one exception in the group
-        assert len(exc_group.exceptions) == 1
-        exc = exc_group.exceptions[0]
-        assert isinstance(exc, HTTPException)
-        assert exc.status_code == 403
-        assert exc.detail == "CSRF token missing"
+    response = client.post("/test", json={})
+    assert response.status_code == 403
+    assert response.json()["detail"] == "CSRF token missing"
 
 
 def test_csrf_middleware_valid_token_header():
@@ -262,11 +253,13 @@ def test_rate_limit_middleware():
                 self.limit = "1/minute"
         exc = RateLimitExceeded(MockLimit())
         exc.retry_after = 10
+        print(f"[TEST] About to raise exception: {exc}")
+        print(f"[TEST] Exception detail: {exc.detail}")
         raise exc
 
     client = TestClient(app)
     response = client.get("/test")
-    print(response.json())
+    print(f"[TEST] Response: {response.json()}")
     assert response.status_code == 429
     # The middleware adds ". Please try again later." to the detail
     assert response.json()["detail"] == "Too many requests. Please try again later."

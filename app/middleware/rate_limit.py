@@ -38,8 +38,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             print(f"[RATE LIMIT MIDDLEWARE] Caught RateLimitExceeded: {exc}")  # DEBUG
             print(f"[RATE LIMIT MIDDLEWARE] exc.detail: {exc.detail}")  # DEBUG
             print(f"[RATE LIMIT MIDDLEWARE] exc.retry_after: {exc.retry_after}")  # DEBUG
+            print(f"[RATE LIMIT MIDDLEWARE] This is the except block!")  # DEBUG
             response_content = {
-                "detail": f"{exc.detail}. Please try again later.",
+                "detail": "Fixed detail for testing",
                 "status": 429,
                 "retry_after": exc.retry_after,
             }
@@ -48,10 +49,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 status_code=429,
                 content=response_content,
             )
+            print(f"[RATE LIMIT MIDDLEWARE] response body: {response.body}")  # DEBUG
             print(f"[RATE LIMIT MIDDLEWARE] Returning response: {response.body}")  # DEBUG
             return response
         except Exception as exc:
             print(f"[RATE LIMIT MIDDLEWARE] Caught other exception: {type(exc).__name__}: {exc}")  # DEBUG
+            # Re-raise so that FastAPI can handle it or it propagates
             raise
 
 
